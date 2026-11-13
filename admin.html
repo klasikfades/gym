@@ -1,0 +1,2213 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Staff Dashboard | Gym</title>
+  <meta name="description" content="Staff and admin dashboard for gym memberships, payments and check-ins." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    /* ---------- app shell ---------- */
+    [hidden] { display: none !important; }
+    body.admin { background: var(--surface-alt); }
+    .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    .login-card { width: 100%; max-width: 380px; }
+    .login-card h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    .pin-input { letter-spacing: .3em; font-size: 1.2rem; text-align: center; }
+
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 236px; flex: 0 0 236px; background: var(--surface);
+      border-right: 1px solid var(--line); padding: 18px 12px;
+      display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar .brand { margin: 0 6px 14px; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 11px 12px; border: 0; border-radius: 10px; background: transparent;
+      color: var(--muted); font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+    }
+    .nav-btn:hover { background: var(--surface-alt); color: var(--text); }
+    .nav-btn[aria-current="page"] { background: color-mix(in srgb, var(--brand) 14%, transparent); color: var(--brand-strong); }
+    .nav-icon { width: 20px; text-align: center; font-size: 1rem; }
+    .sidebar-foot { margin-top: auto; padding: 12px 8px 0; border-top: 1px solid var(--line); }
+
+    .app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+      background: var(--surface); border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; z-index: 20;
+    }
+    .topbar h2 { margin: 0; font-size: 1.05rem; }
+    .topbar-spacer { margin-left: auto; }
+    .icon-btn {
+      min-width: 40px; min-height: 40px; border-radius: 10px; border: 1px solid var(--line);
+      background: var(--surface); color: var(--text); font: inherit; cursor: pointer;
+    }
+    .icon-btn:hover { background: var(--surface-alt); }
+    .view { padding: 20px 18px 96px; }
+    .view-head { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+    .view-head h1 { font-size: 1.5rem; margin: 0; }
+    .view-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ---------- cards / kpi ---------- */
+    .kpi-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+    .kpi-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0 0 6px; }
+    .kpi-value { font-size: 1.7rem; font-weight: 700; letter-spacing: -.03em; margin: 0; }
+    .kpi-value.warn { color: #b45309; }
+    .kpi-value.bad { color: var(--danger); }
+    .kpi-value.good { color: var(--ok); }
+
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-top: 16px; }
+    .panel-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .panel-head h2 { margin: 0; font-size: 1rem; }
+    .charts { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    .chart-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+    .chart-box h3 { font-size: .9rem; color: var(--muted); margin: 0 0 10px; text-transform: uppercase; letter-spacing: .06em; }
+    .chart-holder { position: relative; height: 220px; }
+
+    /* ---------- tables / lists ---------- */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { font-size: .76rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .badge {
+      display: inline-block; padding: 3px 9px; border-radius: 999px;
+      font-size: .74rem; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+      background: var(--surface-alt); color: var(--muted); border: 1px solid var(--line);
+    }
+    .badge.active { background: #dcfce7; color: #14532d; border-color: #bbf7d0; }
+    .badge.expiring { background: #fef3c7; color: #7c2d12; border-color: #fde68a; }
+    .badge.expired { background: #fee2e2; color: #7f1d1d; border-color: #fecaca; }
+    .badge.frozen { background: #dbeafe; color: #1e3a8a; border-color: #bfdbfe; }
+    .badge.notstarted { background: #ede9fe; color: #4c1d95; border-color: #ddd6fe; }
+    html[data-theme="dark"] .badge.active { background: #052e21; color: #6ee7b7; border-color: #065f46; }
+    html[data-theme="dark"] .badge.expiring { background: #3b2a05; color: #fcd34d; border-color: #78350f; }
+    html[data-theme="dark"] .badge.expired { background: #3f1211; color: #fca5a5; border-color: #7f1d1d; }
+    html[data-theme="dark"] .badge.frozen { background: #10233f; color: #93c5fd; border-color: #1e40af; }
+    html[data-theme="dark"] .badge.notstarted { background: #1f1636; color: #c4b5fd; border-color: #4c1d95; }
+
+    .cards-list { display: grid; gap: 10px; }
+    .member-card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 14px; display: grid; gap: 6px;
+    }
+    .member-card-top { display: flex; align-items: flex-start; gap: 8px; }
+    .member-card-top strong { font-size: 1rem; }
+    .member-card-top .badge { margin-left: auto; }
+    .member-meta { color: var(--muted); font-size: .85rem; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+
+    .empty {
+      text-align: center; padding: 34px 16px; color: var(--muted);
+      border: 1px dashed var(--line); border-radius: var(--radius); background: var(--surface);
+    }
+    .empty strong { display: block; color: var(--text); margin-bottom: 4px; }
+
+    .skel { height: 54px; border-radius: 10px; margin-bottom: 8px;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-alt) 37%, var(--surface) 63%);
+      background-size: 400% 100%; animation: shimmer 1.4s ease infinite; }
+
+    /* ---------- forms ---------- */
+    .form-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    .field label { font-size: .85rem; }
+    .field .hint { color: var(--muted); font-size: .78rem; margin: 4px 0 0; }
+    .inline-fields { display: flex; gap: 10px; flex-wrap: wrap; }
+    .inline-fields > .field { flex: 1 1 160px; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    .toolbar input[type="search"] { flex: 1 1 200px; }
+    select { min-height: 44px; }
+
+    /* ---------- modal ---------- */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(8, 15, 26, .58);
+      display: grid; place-items: end center; z-index: 60; padding: 0;
+    }
+    .modal {
+      background: var(--surface); width: 100%; max-width: 640px; max-height: 92vh;
+      overflow-y: auto; border-radius: 18px 18px 0 0; padding: 20px;
+      box-shadow: 0 -10px 40px rgba(0,0,0,.3);
+    }
+    .modal-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+    .modal-head h2 { margin: 0; font-size: 1.15rem; }
+    .modal-head .icon-btn { margin-left: auto; }
+    .modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+    .detail-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+    .detail-grid div span { display: block; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    .detail-grid div strong { font-weight: 600; }
+    .section-title { margin: 20px 0 8px; font-size: .82rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+
+    /* ---------- toast ---------- */
+    #toast-root { position: fixed; left: 50%; transform: translateX(-50%); bottom: 88px; z-index: 80; display: grid; gap: 8px; width: min(420px, 92vw); }
+    .toast {
+      padding: 12px 14px; border-radius: 12px; font-weight: 600; font-size: .9rem;
+      background: #0f172a; color: #f8fafc; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      animation: toastIn .18s ease;
+    }
+    .toast.error { background: #7f1d1d; }
+    .toast.ok { background: #064e3b; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* ---------- check-in ---------- */
+    .checkin-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+    .checkin-input { font-size: 1.25rem; min-height: 60px; }
+    .checkin-result { margin-top: 14px; border-radius: var(--radius); padding: 16px; border: 1px solid var(--line); }
+    .checkin-result.allowed { background: #ecfdf5; border-color: #a7f3d0; }
+    .checkin-result.warned { background: #fffbeb; border-color: #fde68a; }
+    .checkin-result.blocked { background: #fef2f2; border-color: #fecaca; }
+    .checkin-result.duplicate { background: #eff6ff; border-color: #bfdbfe; }
+    html[data-theme="dark"] .checkin-result.allowed { background: #052e21; border-color: #065f46; }
+    html[data-theme="dark"] .checkin-result.warned { background: #3b2a05; border-color: #78350f; }
+    html[data-theme="dark"] .checkin-result.blocked { background: #3f1211; border-color: #7f1d1d; }
+    html[data-theme="dark"] .checkin-result.duplicate { background: #10233f; border-color: #1e40af; }
+    .checkin-result h3 { margin: 0 0 4px; }
+
+    /* ---------- print ---------- */
+    .receipt { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: .9rem; }
+    .receipt h3 { text-align: center; font-family: inherit; }
+    .receipt-line { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+    .receipt hr { border: 0; border-top: 1px dashed var(--line); margin: 10px 0; }
+
+    @media print {
+      .sidebar, .topbar, .view-actions, .modal-foot, #toast-root, .no-print { display: none !important; }
+      body.admin { background: #fff; }
+      .view { padding: 0; }
+      .modal-backdrop { position: static; background: none; display: block; padding: 0; }
+      .modal { box-shadow: none; border-radius: 0; max-height: none; overflow: visible; max-width: none; }
+      .panel, .kpi, .chart-box { border-color: #ccc; break-inside: avoid; }
+      a[href]::after { content: ""; }
+    }
+
+    /* ---------- responsive ---------- */
+    @media (max-width: 899px) {
+      .sidebar {
+        position: fixed; inset: 0 auto 0 0; z-index: 50; transform: translateX(-100%);
+        transition: transform .18s ease; box-shadow: 0 0 40px rgba(0,0,0,.25); height: 100%;
+      }
+      .sidebar.open { transform: none; }
+      .sidebar-backdrop { position: fixed; inset: 0; background: rgba(8,15,26,.5); z-index: 45; border: 0; }
+      .desktop-only { display: none !important; }
+      .bottom-bar {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+        display: flex; gap: 8px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+        background: var(--surface); border-top: 1px solid var(--line);
+      }
+      .bottom-bar .btn { flex: 1; }
+      .modal-backdrop { align-items: end; }
+    }
+    @media (min-width: 900px) {
+      .mobile-only { display: none !important; }
+      .bottom-bar { display: none; }
+      .kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .charts { grid-template-columns: 1fr 1fr; }
+      .form-grid.two { grid-template-columns: 1fr 1fr; }
+      .form-grid.three { grid-template-columns: repeat(3, 1fr); }
+      .view { padding: 24px 28px 40px; }
+      .modal-backdrop { place-items: center; padding: 24px; }
+      .modal { border-radius: 18px; max-height: 88vh; }
+      .cards-list { grid-template-columns: 1fr; }
+      .table-only-mobile { display: none; }
+    }
+    @media (max-width: 899px) { .table-only-desktop { display: none; } }
+  </style>
+</head>
+<body class="admin">
+  <!-- ============ login ============ -->
+  <div id="login-view" class="login-wrap">
+    <div class="card login-card">
+      <p class="eyebrow" id="login-brand">Staff area</p>
+      <h1 id="login-title">Sign in</h1>
+      <p class="muted small">Enter the staff PIN. Staff get check-in, members and payments; admins get everything.</p>
+      <form id="login-form" class="form" novalidate>
+        <div class="field">
+          <label for="pin">PIN</label>
+          <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password"
+                 class="pin-input" maxlength="64" required />
+          <p class="field-error" data-error-for="pin" hidden></p>
+        </div>
+        <button id="login-btn" class="btn btn-primary btn-block" type="submit">Sign in</button>
+        <p class="form-error" id="login-error" role="alert" hidden></p>
+      </form>
+      <p class="small muted" style="margin-top:14px"><a href="/">← Back to the gym page</a></p>
+    </div>
+  </div>
+
+  <!-- ============ app ============ -->
+  <div id="app-view" class="app" hidden>
+    <aside class="sidebar" id="sidebar" aria-label="Sections">
+      <div class="brand">
+        <img id="side-logo" class="brand-logo" src="/og-image.png" alt="" width="32" height="32" />
+        <span id="side-name">Gym</span>
+      </div>
+      <button class="nav-btn" data-view="dashboard"><span class="nav-icon" aria-hidden="true">▦</span>Dashboard</button>
+      <button class="nav-btn" data-view="members"><span class="nav-icon" aria-hidden="true">☰</span>Members</button>
+      <button class="nav-btn" data-view="checkin"><span class="nav-icon" aria-hidden="true">✓</span>Check-in</button>
+      <button class="nav-btn" data-view="payments"><span class="nav-icon" aria-hidden="true">$</span>Payments</button>
+      <button class="nav-btn" data-view="plans"><span class="nav-icon" aria-hidden="true">▤</span>Plans</button>
+      <button class="nav-btn" data-view="inquiries"><span class="nav-icon" aria-hidden="true">✉</span>Inquiries</button>
+      <button class="nav-btn" data-view="reports"><span class="nav-icon" aria-hidden="true">◔</span>Reports</button>
+      <button class="nav-btn" data-view="settings"><span class="nav-icon" aria-hidden="true">⚙</span>Settings</button>
+      <div class="sidebar-foot">
+        <p class="small muted" id="side-role" style="margin:0 6px 8px">Signed in</p>
+        <button class="nav-btn" id="logout-btn"><span class="nav-icon" aria-hidden="true">⏻</span>Sign out</button>
+      </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="topbar">
+        <button class="icon-btn mobile-only" id="menu-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+        <h2 id="topbar-title">Dashboard</h2>
+        <div class="topbar-spacer"></div>
+        <button class="icon-btn" id="theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+      </header>
+
+      <main class="view" id="view-root" tabindex="-1"></main>
+
+      <div class="bottom-bar mobile-only">
+        <button class="btn btn-primary" id="bar-checkin">Check in</button>
+        <button class="btn btn-ghost" id="bar-member">Add member</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- Chart.js pinned to an exact version so an upstream release cannot break the dashboard. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="/config.js"></script>
+  <script>
+  /* =====================================================================
+     admin.html - staff dashboard logic
+     Nothing here is trusted: the server re-checks the session and role on
+     every single action. Hiding a button is only a convenience.
+     ===================================================================== */
+  (function () {
+    'use strict';
+
+    var API = (window.GYM_CONFIG && window.GYM_CONFIG.API_URL) || '';
+    var configured = API && API.indexOf('PASTE_') !== 0;
+
+    var state = {
+      token: localStorage.getItem('gym_token') || '',
+      role: '',
+      gym: {},
+      settings: {},
+      view: 'dashboard',
+      charts: {},
+      members: { q: '', filter: 'all', page: 1, cache: null },
+      payments: { from: '', to: '', q: '', page: 1 },
+      reports: { from: '', to: '' }
+    };
+
+    /* ---------------- tiny DOM helpers ---------------- */
+    function $(sel, root) { return (root || document).querySelector(sel); }
+    function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+    function el(id) { return document.getElementById(id); }
+
+    function h(tag, props) {
+      var node = document.createElement(tag);
+      if (props) {
+        Object.keys(props).forEach(function (k) {
+          var v = props[k];
+          if (v === null || v === undefined || v === false) return;
+          if (k === 'class') node.className = v;
+          else if (k === 'text') node.textContent = v;
+          else if (k === 'dataset') Object.keys(v).forEach(function (d) { node.dataset[d] = v[d]; });
+          else if (k.slice(0, 2) === 'on' && typeof v === 'function') node.addEventListener(k.slice(2).toLowerCase(), v);
+          else if (k === 'checked' || k === 'disabled' || k === 'selected' || k === 'hidden') node[k] = !!v;
+          else node.setAttribute(k, v);
+        });
+      }
+      for (var i = 2; i < arguments.length; i++) {
+        var child = arguments[i];
+        if (Array.isArray(child)) {
+          child.forEach(function (c) { if (c !== null && c !== undefined && c !== false) node.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c); });
+        } else if (child !== null && child !== undefined && child !== false) {
+          node.appendChild(typeof child === 'string' || typeof child === 'number' ? document.createTextNode(String(child)) : child);
+        }
+      }
+      return node;
+    }
+
+    function clear(node) { while (node && node.firstChild) node.removeChild(node.firstChild); }
+
+    function money(amount) {
+      var sym = state.gym.currency_symbol || '$';
+      var n = Number(amount) || 0;
+      return sym + n.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+    }
+
+    function dateLabel(str) {
+      if (!str) return '—';
+      var p = String(str).slice(0, 10).split('-');
+      if (p.length !== 3) return str;
+      var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+      return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function todayISO() {
+      var d = new Date();
+      var m = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return d.getFullYear() + '-' + m + '-' + day;
+    }
+
+    function daysAgoISO(n) {
+      var d = new Date();
+      d.setDate(d.getDate() - n);
+      var m = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return d.getFullYear() + '-' + m + '-' + day;
+    }
+
+    function statusBadge(status) {
+      var map = {
+        'Active': 'active', 'Expiring Soon': 'expiring', 'Expired': 'expired',
+        'Frozen': 'frozen', 'Not Started': 'notstarted', 'No Membership': 'expired',
+        'Inactive': 'expired'
+      };
+      return h('span', { class: 'badge ' + (map[status] || ''), text: status || '—' });
+    }
+
+    /* ---------------- api ---------------- */
+    async function api(action, payload) {
+      if (!configured) throw new Error('This dashboard is not connected yet. Add the Apps Script URL to config.js.');
+      var body = { action: action, payload: payload || {} };
+      if (state.token) body.token = state.token;
+      var res;
+      try {
+        res = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(body),
+          redirect: 'follow'
+        });
+      } catch (netErr) {
+        throw new Error("Can't reach the server. Check your connection and try again.");
+      }
+      var data = null;
+      try { data = await res.json(); } catch (parseErr) { data = null; }
+      if (!data) throw new Error('The server sent an unexpected response. Try again.');
+      if (!data.ok) {
+        var err = new Error((data.error && data.error.message) || 'Request failed.');
+        err.code = data.error && data.error.code;
+        if (err.code === 'AUTH' || err.code === 'FORBIDDEN' && !state.role) signOut(true);
+        throw err;
+      }
+      return data.data;
+    }
+
+    /* ---------------- toast / modal ---------------- */
+    function toast(message, kind) {
+      var root = el('toast-root');
+      var node = h('div', { class: 'toast ' + (kind || ''), text: message, role: 'status' });
+      root.appendChild(node);
+      setTimeout(function () {
+        node.style.opacity = '0';
+        node.style.transition = 'opacity .2s';
+        setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 220);
+      }, kind === 'error' ? 5200 : 3200);
+    }
+
+    function closeModal() {
+      var root = el('modal-root');
+      clear(root);
+    }
+
+    function openModal(title, bodyNode, options) {
+      var opts = options || {};
+      var root = el('modal-root');
+      clear(root);
+
+      var closeBtn = h('button', { class: 'icon-btn', 'aria-label': 'Close', type: 'button', text: '✕', onclick: closeModal });
+      var head = h('div', { class: 'modal-head' }, h('h2', { text: title }), closeBtn);
+      var modal = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title });
+
+      modal.appendChild(head);
+      modal.appendChild(bodyNode);
+      if (opts.footer) modal.appendChild(opts.footer);
+
+      var backdrop = h('div', { class: 'modal-backdrop', onclick: function (e) { if (e.target === backdrop) closeModal(); } }, modal);
+      root.appendChild(backdrop);
+
+      var focusable = modal.querySelector('input, textarea, select, button');
+      if (focusable) setTimeout(function () { focusable.focus(); }, 40);
+
+      backdrop.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Tab') {
+          var nodes = $all('button, input, select, textarea, a[href]', modal).filter(function (n) { return !n.disabled; });
+          if (!nodes.length) return;
+          var first = nodes[0], last = nodes[nodes.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      });
+      return modal;
+    }
+
+    function confirmDialog(title, message, confirmLabel) {
+      return new Promise(function (resolve) {
+        var body = h('div', {}, h('p', { text: message }));
+        var cancel = h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: function () { closeModal(); resolve(false); } });
+        var ok = h('button', { class: 'btn btn-primary', type: 'button', text: confirmLabel || 'Confirm', onclick: function () { closeModal(); resolve(true); } });
+        openModal(title, body, { footer: h('div', { class: 'modal-foot' }, cancel, ok) });
+      });
+    }
+
+    function skeletonList(count) {
+      var wrap = h('div', {});
+      for (var i = 0; i < (count || 4); i++) wrap.appendChild(h('div', { class: 'skel' }));
+      return wrap;
+    }
+
+    function emptyState(title, message, actionNode) {
+      return h('div', { class: 'empty' },
+        h('strong', { text: title }),
+        h('p', { class: 'small', text: message }),
+        actionNode || null
+      );
+    }
+
+    /* ---------------- auth ---------------- */
+    function applyTheme(mode) {
+      var theme = mode === 'dark' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('gym_theme', theme);
+      var btn = el('theme-btn');
+      if (btn) btn.textContent = theme === 'dark' ? '☀' : '◐';
+      return theme;
+    }
+
+    function signOut(silent) {
+      var token = state.token;
+      state.token = '';
+      state.role = '';
+      localStorage.removeItem('gym_token');
+      el('app-view').hidden = true;
+      el('login-view').hidden = false;
+      if (document.body.contains(el('login-view'))) el('login-view').style.display = '';
+      var pin = el('pin');
+      if (pin) pin.value = '';
+      if (!silent) toast('Signed out.');
+      if (token && configured) {
+        fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'logout', token: token, payload: {} }),
+          redirect: 'follow'
+        }).catch(function () {});
+      }
+    }
+
+    async function afterLogin(session) {
+      state.token = session.token;
+      state.role = session.role;
+      localStorage.setItem('gym_token', session.token);
+      el('login-view').hidden = true;
+      el('login-view').style.display = 'none';
+      el('app-view').hidden = false;
+      el('side-role').textContent = 'Signed in as ' + session.role;
+      state.gym = session.gym || {};
+      el('side-name').textContent = state.gym.gym_name || 'Gym';
+      if (state.gym.logo_url) el('side-logo').src = state.gym.logo_url;
+      applyTheme(localStorage.getItem('gym_theme') || state.gym.theme_default || 'light');
+      try {
+        var data = await api('settings_get', {});
+        state.settings = (data && data.settings) || {};
+        state.gym = Object.assign({}, state.gym, (data && data.public) || {});
+      } catch (err) { /* settings load is not fatal */ }
+      setView('dashboard');
+    }
+
+    function bindLogin() {
+      var form = el('login-form');
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var pinInput = el('pin');
+        var errNode = $('[data-error-for="pin"]');
+        var status = el('login-error');
+        var btn = el('login-btn');
+        var pin = pinInput.value.trim();
+        errNode.hidden = true;
+        status.hidden = true;
+        status.textContent = '';
+
+        if (!pin || pin.length < 4) {
+          errNode.textContent = 'Enter your PIN (at least 4 characters).';
+          errNode.hidden = false;
+          pinInput.focus();
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Signing in…';
+        try {
+          var session = await api('login', { pin: pin });
+          await afterLogin(session);
+          toast('Welcome back.', 'ok');
+        } catch (err) {
+          status.textContent = err.message;
+          status.hidden = false;
+          pinInput.select();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Sign in';
+        }
+      });
+    }
+
+    /* ---------------- routing ---------------- */
+    var VIEW_TITLES = {
+      dashboard: 'Dashboard', members: 'Members', checkin: 'Check-in',
+      payments: 'Payments', plans: 'Plans', reports: 'Reports',
+      settings: 'Settings', inquiries: 'Inquiries'
+    };
+
+    function setView(name) {
+      state.view = name;
+      $all('.nav-btn[data-view]').forEach(function (b) {
+        b.setAttribute('aria-current', b.dataset.view === name ? 'page' : 'false');
+      });
+      el('topbar-title').textContent = VIEW_TITLES[name] || 'Dashboard';
+      closeModal();
+      if (name === 'dashboard') viewDashboard();
+      else if (name === 'members') viewMembers();
+      else if (name === 'checkin') viewCheckin();
+      else if (name === 'payments') viewPayments();
+      else if (name === 'plans') viewPlans();
+      else if (name === 'reports') viewReports();
+      else if (name === 'settings') viewSettings();
+      else if (name === 'inquiries') viewInquiries();
+    }
+
+    function setLoading(title) {
+      var root = el('view-root');
+      clear(root);
+      root.appendChild(h('div', { class: 'view-head' }, h('h1', { text: title })));
+      root.appendChild(skeletonList(4));
+    }
+
+    function setServerError(retry) {
+      var root = el('view-root');
+      clear(root);
+      root.appendChild(emptyState(
+        "Can't reach the server",
+        'The dashboard could not load data. Check your connection, then try again.',
+        h('button', { class: 'btn btn-primary', type: 'button', text: 'Retry', onclick: retry })
+      ));
+    }
+
+    /* =================================================================
+       DASHBOARD
+       ================================================================= */
+    function chartInto(holder, config) {
+      if (typeof Chart === 'undefined') {
+        holder.appendChild(h('p', { class: 'small muted', text: 'Charts need the Chart.js library to load.' }));
+        return;
+      }
+      if (holder._chart) holder._chart.destroy();
+      holder._chart = new Chart(holder, config);
+    }
+
+    function chartTheme() {
+      var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      return {
+        text: dark ? '#9aa9bd' : '#5b6b7f',
+        grid: dark ? 'rgba(148,163,184,.16)' : 'rgba(148,163,184,.28)',
+        brand: dark ? '#2dd4bf' : '#0f766e',
+        second: dark ? '#93c5fd' : '#1d4ed8'
+      };
+    }
+
+    async function viewDashboard() {
+      setLoading('Dashboard');
+      var root = el('view-root');
+      var data;
+      try {
+        data = await api('dashboard', {});
+      } catch (err) {
+        if (err.code === 'AUTH') return;
+        setServerError(viewDashboard);
+        return;
+      }
+
+      clear(root);
+      root.appendChild(h('div', { class: 'view-head' },
+        h('h1', { text: 'Dashboard' }),
+        h('span', { class: 'small muted', text: 'Today: ' + dateLabel(data.today) })
+      ));
+
+      var k = data.kpis;
+      root.appendChild(h('div', { class: 'kpi-grid' },
+        h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Total members' }), h('p', { class: 'kpi-value', text: k.total_members })),
+        h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Active' }), h('p', { class: 'kpi-value good', text: k.active })),
+        h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Expiring soon' }), h('p', { class: 'kpi-value warn', text: k.expiring_soon })),
+        h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Expired' }), h('p', { class: 'kpi-value bad', text: k.expired })),
+        h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Frozen' }), h('p', { class: 'kpi-value', text: k.frozen })),
+        h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: "Today's check-ins" }), h('p', { class: 'kpi-value', text: k.checkins_today })),
+        h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Revenue this month' }), h('p', { class: 'kpi-value', text: money(k.revenue_month) })),
+        h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Outstanding' }), h('p', { class: 'kpi-value warn', text: money(k.outstanding) }))
+      ));
+
+      var charts = h('div', { class: 'charts' });
+      var revenueBox = h('div', { class: 'chart-box' }, h('h3', { text: 'Monthly revenue' }), h('div', { class: 'chart-holder' }));
+      var membersBox = h('div', { class: 'chart-box' }, h('h3', { text: 'New members per month' }), h('div', { class: 'chart-holder' }));
+      var planBox = h('div', { class: 'chart-box' }, h('h3', { text: 'Plan distribution' }), h('div', { class: 'chart-holder' }));
+      var hoursBox = h('div', { class: 'chart-box' }, h('h3', { text: 'Peak check-in hours' }), h('div', { class: 'chart-holder' }));
+      charts.appendChild(revenueBox); charts.appendChild(membersBox); charts.appendChild(planBox); charts.appendChild(hoursBox);
+      root.appendChild(charts);
+
+      var t = chartTheme();
+      chartInto($('.chart-holder', revenueBox), {
+        type: 'bar',
+        data: {
+          labels: data.charts.monthly_revenue.map(function (r) { return r.label; }),
+          datasets: [{ label: 'Revenue', data: data.charts.monthly_revenue.map(function (r) { return r.value; }), backgroundColor: t.brand, borderRadius: 6 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: t.text }, grid: { display: false } }, y: { ticks: { color: t.text }, grid: { color: t.grid }, beginAtZero: true } } }
+      });
+      chartInto($('.chart-holder', membersBox), {
+        type: 'line',
+        data: {
+          labels: data.charts.new_members.map(function (r) { return r.label; }),
+          datasets: [{ label: 'New members', data: data.charts.new_members.map(function (r) { return r.value; }), borderColor: t.second, backgroundColor: 'transparent', tension: .3, pointRadius: 3 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: t.text }, grid: { display: false } }, y: { ticks: { color: t.text }, grid: { color: t.grid }, beginAtZero: true, precision: 0 } } }
+      });
+      chartInto($('.chart-holder', planBox), {
+        type: 'doughnut',
+        data: {
+          labels: data.charts.plan_distribution.map(function (r) { return r.label; }),
+          datasets: [{ data: data.charts.plan_distribution.map(function (r) { return r.value; }), backgroundColor: ['#0f766e', '#1d4ed8', '#f59e0b', '#db2777', '#7c3aed', '#059669'], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: t.text, boxWidth: 10 } } } }
+      });
+      chartInto($('.chart-holder', hoursBox), {
+        type: 'bar',
+        data: {
+          labels: data.charts.peak_hours.map(function (r) { return r.label; }),
+          datasets: [{ label: 'Check-ins', data: data.charts.peak_hours.map(function (r) { return r.value; }), backgroundColor: t.brand, borderRadius: 4 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: t.text }, grid: { display: false } }, y: { ticks: { color: t.text }, grid: { color: t.grid }, beginAtZero: true, precision: 0 } } }
+      });
+
+      var expiringPanel = h('section', { class: 'panel' },
+        h('div', { class: 'panel-head' },
+          h('h2', { text: 'Expiring in the next ' + (state.settings.expiry_warning_days || 7) + ' days' }),
+          h('button', { class: 'btn btn-ghost btn-sm', style: 'margin-left:auto', type: 'button', text: 'Reminders', onclick: function () { remindersModal('expiring'); } })
+        )
+      );
+
+      if (!data.expiring.length) {
+        expiringPanel.appendChild(emptyState('Nothing expiring', 'No memberships end in the next few days.'));
+      } else {
+        var list = h('div', { class: 'cards-list' });
+        data.expiring.forEach(function (m) {
+          list.appendChild(h('div', { class: 'member-card' },
+            h('div', { class: 'member-card-top' },
+              h('strong', { text: m.full_name }),
+              h('span', { class: 'badge expiring', text: m.days_left + 'd left' })
+            ),
+            h('div', { class: 'member-meta' },
+              h('span', { text: 'Ends ' + dateLabel(m.end_date) }),
+              h('span', { text: m.plan_name || '—' }),
+              m.balance_due > 0 ? h('span', { text: 'Owes ' + money(m.balance_due) }) : null
+            ),
+            h('div', { class: 'row-actions' },
+              h('button', {
+                class: 'btn btn-primary btn-sm', type: 'button', text: 'Renew',
+                onclick: function () { openMember(m.member_id, true); }
+              }),
+              h('button', {
+                class: 'btn btn-ghost btn-sm', type: 'button', text: 'Message',
+                onclick: function () { messageModal(m); }
+              })
+            )
+          ));
+        });
+        expiringPanel.appendChild(list);
+      }
+      root.appendChild(expiringPanel);
+    }
+
+    function renderTemplate(template, vars) {
+      var out = String(template || '');
+      Object.keys(vars).forEach(function (k) {
+        out = out.split('{' + k + '}').join(vars[k] == null ? '' : String(vars[k]));
+      });
+      return out;
+    }
+
+    function messageModal(member) {
+      var template = state.settings.template_expiring || 'Hi {name}, your {gym} membership ends on {end_date}.';
+      var msg = renderTemplate(template, {
+        name: member.full_name,
+        gym: state.gym.gym_name || 'the gym',
+        end_date: dateLabel(member.end_date),
+        days_left: member.days_left,
+        balance: (member.balance_due || 0).toFixed(2),
+        currency: state.gym.currency_symbol || '$'
+      });
+
+      var area = h('textarea', { rows: 5, id: 'msg-text', 'aria-label': 'Message' });
+      area.value = msg;
+
+      var body = h('div', {},
+        h('p', { class: 'small muted', text: 'Edit before sending. Nothing is sent automatically.' }),
+        h('div', { class: 'field' }, area)
+      );
+
+      var copyBtn = h('button', {
+        class: 'btn btn-primary', type: 'button', text: 'Copy message',
+        onclick: async function () {
+          try {
+            await navigator.clipboard.writeText(area.value);
+            toast('Message copied.', 'ok');
+          } catch (err) {
+            area.select();
+            toast('Select and copy the text manually.', 'error');
+          }
+        }
+      });
+      var smsBtn = h('button', {
+        class: 'btn btn-ghost', type: 'button', text: 'Open SMS',
+        onclick: function () { window.location.href = 'sms:' + (member.phone || '') + '?&body=' + encodeURIComponent(area.value); }
+      });
+      var mailBtn = h('button', {
+        class: 'btn btn-ghost', type: 'button', text: 'Open email',
+        onclick: function () { window.location.href = 'mailto:' + (member.email || '') + '?subject=' + encodeURIComponent('Your membership') + '&body=' + encodeURIComponent(area.value); }
+      });
+
+      openModal('Message ' + member.full_name, body, { footer: h('div', { class: 'modal-foot' }, mailBtn, smsBtn, copyBtn) });
+    }
+
+    async function remindersModal(type) {
+      var body = skeletonList(3);
+      openModal('Reminders', body, {});
+      try {
+        var data = await api('reminders_list', { type: type });
+        var node = h('div', {});
+        if (!data.items.length) {
+          node.appendChild(emptyState('Nobody here', 'No members match this reminder right now.'));
+        } else {
+          var list = h('div', { class: 'cards-list' });
+          data.items.forEach(function (m) {
+            list.appendChild(h('div', { class: 'member-card' },
+              h('div', { class: 'member-card-top' }, h('strong', { text: m.full_name }), statusBadge(m.status)),
+              h('div', { class: 'member-meta' },
+                h('span', { text: m.phone || m.email || 'no contact' }),
+                h('span', { text: m.days_left != null ? m.days_left + ' days left' : '' }),
+                m.balance_due > 0 ? h('span', { text: 'Owes ' + money(m.balance_due) }) : null
+              ),
+              h('div', { class: 'row-actions' },
+                h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Message', onclick: function () { messageModal(m); } })
+              )
+            ));
+          });
+          node.appendChild(list);
+        }
+        clear(body); body.appendChild(node);
+      } catch (err) {
+        clear(body); body.appendChild(h('p', { class: 'form-error', text: err.message }));
+      }
+    }
+
+    /* =================================================================
+       CHECK-IN
+       ================================================================= */
+    async function viewCheckin() {
+      var root = el('view-root');
+      clear(root);
+
+      var input = h('input', {
+        id: 'checkin-input', class: 'checkin-input', type: 'text', autocomplete: 'off',
+        inputmode: 'text', placeholder: 'Scan or type member ID (GYM-0001), phone or name',
+        'aria-label': 'Member ID, phone or name'
+      });
+      var resultBox = h('div', { id: 'checkin-result', hidden: true });
+      var logBox = h('div', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h2', { text: "Today's check-ins" })), skeletonList(3));
+
+      var submit = h('button', { class: 'btn btn-primary', type: 'submit', text: 'Check in' });
+      var form = h('form', { class: 'form' },
+        h('div', { class: 'field' }, input),
+        submit
+      );
+
+      root.appendChild(h('div', { class: 'view-head' }, h('h1', { text: 'Check-in' })));
+      root.appendChild(h('div', { class: 'checkin-panel' }, form, resultBox));
+      root.appendChild(logBox);
+
+      function showResult(data) {
+        clear(resultBox);
+        var cls = data.result === 'allowed' ? 'allowed'
+          : data.result === 'warned' ? 'warned'
+          : data.result === 'blocked' ? 'blocked'
+          : data.result === 'duplicate' ? 'duplicate' : 'warned';
+        var m = data.member || {};
+        resultBox.className = 'checkin-result ' + cls;
+        resultBox.hidden = false;
+
+        resultBox.appendChild(h('h3', { text: data.result === 'blocked' ? 'Check-in blocked' : data.result === 'duplicate' ? 'Already checked in' : data.result === 'warned' ? 'Checked in with a warning' : data.result === 'ambiguous' ? 'Pick the member' : 'Checked in' }));
+        if (m.full_name) {
+          resultBox.appendChild(h('p', { style: 'margin:0 0 8px', text: m.full_name + ' · ' + (m.member_id || '') + ' · ' + (m.plan_name || 'no plan') }));
+        }
+        resultBox.appendChild(h('p', { class: 'small', style: 'margin:0', text: data.message || '' }));
+
+        if (m.full_name) {
+          var details = h('div', { class: 'member-meta', style: 'margin-top:10px' },
+            m.status ? statusBadge(m.status) : null,
+            m.end_date ? h('span', { text: 'Ends ' + dateLabel(m.end_date) }) : null,
+            m.days_left != null ? h('span', { text: m.days_left + ' days left' }) : null,
+            m.balance_due > 0 ? h('span', { text: 'Balance ' + money(m.balance_due) }) : null
+          );
+          resultBox.appendChild(details);
+        }
+
+        if (data.candidates && data.candidates.length) {
+          var wrap = h('div', { class: 'row-actions', style: 'margin-top:12px' });
+          data.candidates.forEach(function (c) {
+            wrap.appendChild(h('button', {
+              class: 'btn btn-ghost btn-sm', type: 'button', text: c.full_name + ' · ' + c.member_id,
+              onclick: function () { input.value = c.member_id; form.requestSubmit(); }
+            }));
+          });
+          resultBox.appendChild(wrap);
+        }
+
+        if (data.result === 'blocked' && m.member_id) {
+          resultBox.appendChild(h('div', { class: 'row-actions', style: 'margin-top:12px' },
+            h('button', { class: 'btn btn-primary btn-sm', type: 'button', text: 'Renew membership', onclick: function () { openMember(m.member_id, true); } })
+          ));
+        }
+      }
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var query = input.value.trim();
+        if (!query) { input.focus(); return; }
+        submit.disabled = true;
+        submit.textContent = 'Checking…';
+        try {
+          var data = await api('checkin', { query: query });
+          showResult(data);
+          input.value = '';
+          loadTodayLog();
+        } catch (err) {
+          clear(resultBox);
+          resultBox.className = 'checkin-result blocked';
+          resultBox.hidden = false;
+          resultBox.appendChild(h('h3', { text: 'Not checked in' }));
+          resultBox.appendChild(h('p', { class: 'small', style: 'margin:0', text: err.message }));
+        } finally {
+          submit.disabled = false;
+          submit.textContent = 'Check in';
+          input.focus();
+        }
+      });
+
+      async function loadTodayLog() {
+        try {
+          var data = await api('attendance_list', { date: todayISO(), page: 1, page_size: 50 });
+          clear(logBox);
+          logBox.appendChild(h('div', { class: 'panel-head' },
+            h('h2', { text: "Today's check-ins" }),
+            h('span', { class: 'small muted', style: 'margin-left:auto', text: data.total + ' total · ' + data.counts.blocked + ' blocked' })
+          ));
+          if (!data.items.length) {
+            logBox.appendChild(emptyState('No check-ins yet', 'The first check-in today will appear here.'));
+            return;
+          }
+          var table = h('table', {},
+            h('thead', {}, h('tr', {}, h('th', { text: 'Time' }), h('th', { text: 'Member' }), h('th', { text: 'Result' }), h('th', { text: 'Note' }))),
+            h('tbody', {}, data.items.map(function (r) {
+              return h('tr', {},
+                h('td', { text: r.time_in }),
+                h('td', { text: r.member_name }),
+                h('td', {}, h('span', { class: 'badge ' + (r.result === 'allowed' ? 'active' : r.result === 'warned' ? 'expiring' : 'expired'), text: r.result })),
+                h('td', { class: 'small muted', text: r.reason || '—' })
+              );
+            }))
+          );
+          logBox.appendChild(h('div', { class: 'table-wrap' }, table));
+        } catch (err) {
+          clear(logBox);
+          logBox.appendChild(h('p', { class: 'form-error', text: err.message }));
+        }
+      }
+
+      loadTodayLog();
+      setTimeout(function () { input.focus(); }, 60);
+    }
+
+    /* =================================================================
+       MEMBERS
+       ================================================================= */
+    function field(labelText, inputNode, hint) {
+      var id = inputNode.id;
+      return h('div', { class: 'field' },
+        h('label', { for: id, text: labelText }),
+        inputNode,
+        hint ? h('p', { class: 'hint', text: hint }) : null
+      );
+    }
+
+    function textInput(id, value, extra) {
+      var props = { id: id, type: 'text', value: value == null ? '' : String(value) };
+      if (extra) Object.keys(extra).forEach(function (k) { props[k] = extra[k]; });
+      return h('input', props);
+    }
+
+    function selectInput(id, options, value) {
+      var sel = h('select', { id: id });
+      options.forEach(function (o) {
+        var opt = h('option', { value: o.value, text: o.label });
+        if (String(o.value) === String(value)) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      return sel;
+    }
+
+    async function viewMembers() {
+      setLoading('Members');
+      var root = el('view-root');
+
+      var search = h('input', { type: 'search', id: 'member-search', placeholder: 'Search name, phone, ID or email', 'aria-label': 'Search members', value: state.members.q });
+      var filter = selectInput('member-filter', [
+        { value: 'all', label: 'All active' },
+        { value: 'expiring', label: 'Expiring soon' },
+        { value: 'expired', label: 'Expired' },
+        { value: 'frozen', label: 'Frozen' },
+        { value: 'unpaid', label: 'Unpaid balance' },
+        { value: 'inactive', label: 'Inactive (deleted)' }
+      ], state.members.filter);
+
+      var addBtn = h('button', { class: 'btn btn-primary', type: 'button', text: 'Add member', onclick: function () { openMemberForm(null); } });
+      var listBox = h('div', {}, skeletonList(5));
+
+      clear(root);
+      root.appendChild(h('div', { class: 'view-head' }, h('h1', { text: 'Members' }), h('div', { class: 'view-actions' }, addBtn)));
+      root.appendChild(h('div', { class: 'toolbar' }, search, filter));
+      root.appendChild(listBox);
+
+      var debounce;
+      function reload() {
+        state.members.q = search.value.trim();
+        state.members.filter = filter.value;
+        state.members.page = 1;
+        load();
+      }
+      search.addEventListener('input', function () {
+        clearTimeout(debounce);
+        debounce = setTimeout(reload, 280);
+      });
+      filter.addEventListener('change', reload);
+
+      async function load() {
+        clear(listBox);
+        listBox.appendChild(skeletonList(5));
+        var data;
+        try {
+          data = await api('members_list', {
+            q: state.members.q, filter: state.members.filter,
+            page: state.members.page, page_size: 25
+          });
+        } catch (err) {
+          clear(listBox);
+          listBox.appendChild(emptyState("Can't load members", err.message, h('button', { class: 'btn btn-primary', type: 'button', text: 'Retry', onclick: load })));
+          return;
+        }
+
+        clear(listBox);
+        if (!data.items.length) {
+          listBox.appendChild(emptyState(
+            state.members.q ? 'No matches' : 'No members yet',
+            state.members.q ? 'Try a different name, phone or ID.' : 'Add the first member to get started.',
+            state.members.q ? null : h('button', { class: 'btn btn-primary', type: 'button', text: 'Add member', onclick: function () { openMemberForm(null); } })
+          ));
+          return;
+        }
+
+        // Desktop table
+        var table = h('table', {},
+          h('thead', {}, h('tr', {},
+            h('th', { text: 'Member' }), h('th', { text: 'Status' }), h('th', { text: 'Plan' }),
+            h('th', { text: 'Ends' }), h('th', { text: 'Balance' }), h('th', { text: '' })
+          )),
+          h('tbody', {}, data.items.map(function (m) {
+            return h('tr', {},
+              h('td', {},
+                h('strong', { text: m.full_name }),
+                h('div', { class: 'small muted', text: m.member_id + ' · ' + (m.phone || m.email || 'no contact') })
+              ),
+              h('td', {}, statusBadge(m.status)),
+              h('td', { text: m.plan_name || '—' }),
+              h('td', { text: m.end_date ? dateLabel(m.end_date) : '—' }),
+              h('td', { text: m.balance_due > 0 ? money(m.balance_due) : '—' }),
+              h('td', {}, h('div', { class: 'row-actions' },
+                h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Open', onclick: function () { openMember(m.member_id); } })
+              ))
+            );
+          }))
+        );
+        listBox.appendChild(h('div', { class: 'panel table-only-desktop' }, h('div', { class: 'table-wrap' }, table)));
+
+        // Mobile cards
+        var cards = h('div', { class: 'cards-list table-only-mobile' });
+        data.items.forEach(function (m) {
+          cards.appendChild(h('div', { class: 'member-card' },
+            h('div', { class: 'member-card-top' }, h('strong', { text: m.full_name }), statusBadge(m.status)),
+            h('div', { class: 'member-meta' },
+              h('span', { text: m.member_id }),
+              h('span', { text: m.phone || m.email || 'no contact' })
+            ),
+            h('div', { class: 'member-meta' },
+              h('span', { text: m.plan_name || 'No plan' }),
+              m.end_date ? h('span', { text: 'Ends ' + dateLabel(m.end_date) }) : null,
+              m.balance_due > 0 ? h('span', { text: 'Owes ' + money(m.balance_due) }) : null
+            ),
+            h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Open member', onclick: function () { openMember(m.member_id); } })
+          ));
+        });
+        listBox.appendChild(cards);
+
+        if (data.total > data.page_size) {
+          var pages = Math.ceil(data.total / data.page_size);
+          listBox.appendChild(h('div', { class: 'toolbar', style: 'margin-top:12px' },
+            h('button', {
+              class: 'btn btn-ghost btn-sm', type: 'button', text: 'Previous', disabled: data.page <= 1,
+              onclick: function () { state.members.page -= 1; load(); }
+            }),
+            h('span', { class: 'small muted', text: 'Page ' + data.page + ' of ' + pages + ' · ' + data.total + ' members' }),
+            h('button', {
+              class: 'btn btn-ghost btn-sm', type: 'button', text: 'Next', disabled: data.page >= pages,
+              onclick: function () { state.members.page += 1; load(); }
+            })
+          ));
+        }
+      }
+
+      load();
+    }
+
+    /* ---------------- member form ---------------- */
+    function openMemberForm(member) {
+      var isEdit = !!(member && member.member_id);
+      var m = member || {};
+      var form = h('div', { class: 'form' },
+        h('div', { class: 'form-grid two' },
+          field('Full name *', textInput('f-name', m.full_name, { maxlength: 80, autocomplete: 'name' })),
+          field('Phone', textInput('f-phone', m.phone, { maxlength: 32, type: 'tel', autocomplete: 'tel' })),
+          field('Email', textInput('f-email', m.email, { maxlength: 120, type: 'email', autocomplete: 'email' })),
+          field('Date joined', textInput('f-joined', m.date_joined || todayISO(), { type: 'date' })),
+          field('Emergency contact', textInput('f-emergency', m.emergency_name, { maxlength: 80 })),
+          field('Emergency phone', textInput('f-emergency-phone', m.emergency_phone, { maxlength: 32, type: 'tel' })),
+          field('Status override', selectInput('f-override', [{ value: 'none', label: 'None' }, { value: 'frozen', label: 'Frozen' }], m.status_override || 'none'), 'Frozen members cannot check in.'),
+          field('Active', selectInput('f-active', [{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }], m.active === false ? 'false' : 'true'))
+        ),
+        field('Address', textInput('f-address', m.address, { maxlength: 240 })),
+        field('Photo URL (optional, https://)', textInput('f-photo', m.photo_url, { maxlength: 500, type: 'url' })),
+        field('Notes', h('textarea', { id: 'f-notes', rows: 3, maxlength: 900 }), 'Only staff see notes.')
+      );
+      $('#f-notes', form).value = m.notes || '';
+
+      var errorNode = h('p', { class: 'form-error', hidden: true, role: 'alert' });
+      var saveBtn = h('button', { class: 'btn btn-primary', type: 'button', text: isEdit ? 'Save changes' : 'Add member' });
+      var cancelBtn = h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: closeModal });
+
+      saveBtn.addEventListener('click', async function () {
+        errorNode.hidden = true;
+        var payload = {
+          member_id: m.member_id || '',
+          full_name: $('#f-name', form).value.trim(),
+          phone: $('#f-phone', form).value.trim(),
+          email: $('#f-email', form).value.trim(),
+          address: $('#f-address', form).value.trim(),
+          photo_url: $('#f-photo', form).value.trim(),
+          emergency_name: $('#f-emergency', form).value.trim(),
+          emergency_phone: $('#f-emergency-phone', form).value.trim(),
+          date_joined: $('#f-joined', form).value,
+          status_override: $('#f-override', form).value,
+          notes: $('#f-notes', form).value.trim(),
+          active: $('#f-active', form).value === 'true'
+        };
+        if (!payload.full_name) {
+          errorNode.textContent = 'Full name is required.';
+          errorNode.hidden = false;
+          $('#f-name', form).focus();
+          return;
+        }
+        if (!payload.phone && !payload.email) {
+          errorNode.textContent = 'Give a phone number or an email.';
+          errorNode.hidden = false;
+          $('#f-phone', form).focus();
+          return;
+        }
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+        try {
+          var saved = await api('member_save', { member: payload });
+          toast(isEdit ? 'Member updated.' : 'Member added.', 'ok');
+          closeModal();
+          if (isEdit) openMember(saved.member_id);
+          else if (state.view === 'members') viewMembers();
+          else viewMembers();
+        } catch (err) {
+          errorNode.textContent = err.message;
+          errorNode.hidden = false;
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = isEdit ? 'Save changes' : 'Add member';
+        }
+      });
+
+      var body = h('div', {}, form, errorNode);
+      openModal(isEdit ? 'Edit member' : 'Add member', body, { footer: h('div', { class: 'modal-foot' }, cancelBtn, saveBtn) });
+    }
+
+    /* ---------------- member detail ---------------- */
+    async function openMember(memberId, renewMode) {
+      var body = skeletonList(5);
+      openModal('Member', body);
+      var data;
+      try {
+        data = await api('member_get', { member_id: memberId });
+      } catch (err) {
+        clear(body);
+        body.appendChild(h('p', { class: 'form-error', text: err.message }));
+        return;
+      }
+
+      var m = data.member;
+      var canDelete = state.role === 'admin';
+      var current = data.memberships.filter(function (x) { return x.membership_id === m.membership_id; })[0] || null;
+
+      clear(body);
+      body.appendChild(h('div', { class: 'member-meta', style: 'margin-bottom:10px' },
+        statusBadge(m.status),
+        h('span', { text: m.member_id }),
+        m.phone ? h('span', { text: m.phone }) : null,
+        m.active ? null : h('span', { class: 'badge expired', text: 'inactive' })
+      ));
+
+      body.appendChild(h('div', { class: 'detail-grid' },
+        h('div', {}, h('span', { text: 'Plan' }), h('strong', { text: m.plan_name || 'No plan' })),
+        h('div', {}, h('span', { text: 'Period' }), h('strong', { text: (m.start_date ? dateLabel(m.start_date) + ' – ' : '') + (m.end_date ? dateLabel(m.end_date) : '—') })),
+        h('div', {}, h('span', { text: 'Days left' }), h('strong', { text: m.days_left == null ? '—' : String(m.days_left) })),
+        h('div', {}, h('span', { text: 'Balance' }), h('strong', { text: money(m.balance_due) + ' of ' + money(m.price_due) })),
+        h('div', {}, h('span', { text: 'Email' }), h('strong', { text: m.email || '—' })),
+        h('div', {}, h('span', { text: 'Joined' }), h('strong', { text: dateLabel(m.date_joined) })),
+        h('div', {}, h('span', { text: 'Emergency' }), h('strong', { text: (m.emergency_name || '—') + (m.emergency_phone ? ' · ' + m.emergency_phone : '') })),
+        h('div', {}, h('span', { text: 'Address' }), h('strong', { text: m.address || '—' }))
+      ));
+
+      if (m.notes) body.appendChild(h('p', { class: 'small muted', style: 'margin-top:10px', text: m.notes }));
+      if (m.photo_url) body.appendChild(h('img', { src: m.photo_url, alt: m.full_name + ' photo', style: 'max-width:120px;border-radius:10px;margin-top:10px' }));
+
+      // Primary actions
+      var actions = h('div', { class: 'row-actions', style: 'margin-top:16px' });
+      if (current && (current.status === 'Expired' || current.status === 'Expiring Soon' || current.status === 'Frozen' || current.status === 'Active' || current.status === 'Not Started')) {
+        actions.appendChild(h('button', { class: 'btn btn-primary btn-sm', type: 'button', text: 'Renew', onclick: function () { renewModal(current); } }));
+      }
+      if (m.balance_due > 0 && current) {
+        actions.appendChild(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Add payment', onclick: function () { paymentModal(m, current); } }));
+      } else if (current) {
+        actions.appendChild(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Add payment', onclick: function () { paymentModal(m, current); } }));
+      }
+      if (!current) {
+        actions.appendChild(h('button', { class: 'btn btn-primary btn-sm', type: 'button', text: 'Assign a plan', onclick: function () { assignModal(m); } }));
+      }
+      if (current && current.status === 'Frozen') {
+        actions.appendChild(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Unfreeze', onclick: function () { unfreeze(current); } }));
+      } else if (current && current.status !== 'Expired') {
+        actions.appendChild(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Freeze', onclick: function () { freezeModal(current); } }));
+      }
+      actions.appendChild(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Edit', onclick: function () { openMemberForm(m); } }));
+      if (m.phone) actions.appendChild(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Message', onclick: function () { messageModal(m); } }));
+      if (canDelete && m.active) {
+        actions.appendChild(h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Deactivate', onclick: function () { deactivateMember(m); } }));
+      }
+      body.appendChild(actions);
+
+      // Memberships
+      body.appendChild(h('p', { class: 'section-title', text: 'Membership history' }));
+      if (!data.memberships.length) {
+        body.appendChild(h('p', { class: 'small muted', text: 'No memberships yet.' }));
+      } else {
+        var msTable = h('table', {},
+          h('thead', {}, h('tr', {}, h('th', { text: 'Plan' }), h('th', { text: 'Period' }), h('th', { text: 'Status' }), h('th', { text: 'Paid' }), h('th', { text: '' }))),
+          h('tbody', {}, data.memberships.map(function (ms) {
+            return h('tr', {},
+              h('td', { text: ms.plan_name }),
+              h('td', { class: 'small', text: dateLabel(ms.start_date) + ' – ' + dateLabel(ms.end_date) }),
+              h('td', {}, statusBadge(ms.status)),
+              h('td', { class: 'small', text: money(ms.amount_paid) + (ms.balance_due > 0 ? ' / ' + money(ms.price_due) : '') }),
+              h('td', {}, h('div', { class: 'row-actions' },
+                h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Pay', onclick: function () { paymentModal(m, ms); } }),
+                h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Renew', onclick: function () { renewModal(ms); } })
+              ))
+            );
+          }))
+        );
+        body.appendChild(h('div', { class: 'table-wrap' }, msTable));
+      }
+
+      // Payments
+      body.appendChild(h('p', { class: 'section-title', text: 'Payments' }));
+      if (!data.payments.length) {
+        body.appendChild(h('p', { class: 'small muted', text: 'No payments recorded.' }));
+      } else {
+        var payTable = h('table', {},
+          h('thead', {}, h('tr', {}, h('th', { text: 'Date' }), h('th', { text: 'Amount' }), h('th', { text: 'Method' }), h('th', { text: 'Receipt' }), h('th', { text: '' }))),
+          h('tbody', {}, data.payments.map(function (p) {
+            return h('tr', {},
+              h('td', { text: dateLabel(p.date) }),
+              h('td', { text: money(p.amount) }),
+              h('td', { class: 'small', text: p.method }),
+              h('td', { class: 'small', text: p.voided ? 'voided' : p.receipt_no }),
+              h('td', {}, p.voided ? null : h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Receipt', onclick: function () { receiptModal(p.payment_id); } }))
+            );
+          }))
+        );
+        body.appendChild(h('div', { class: 'table-wrap' }, payTable));
+      }
+
+      // Attendance
+      body.appendChild(h('p', { class: 'section-title', text: 'Recent attendance' }));
+      if (!data.attendance.length) {
+        body.appendChild(h('p', { class: 'small muted', text: 'No check-ins yet.' }));
+      } else {
+        body.appendChild(h('ul', { class: 'small', style: 'padding-left:18px;margin:0' }, data.attendance.map(function (a) {
+          return h('li', { text: dateLabel(a.date) + ' at ' + a.time_in + ' · ' + a.result + (a.reason ? ' · ' + a.reason : '') });
+        })));
+      }
+
+      if (renewMode && current) setTimeout(function () { renewModal(current); }, 120);
+    }
+
+    async function deactivateMember(member) {
+      var ok = await confirmDialog('Deactivate member', 'Deactivate ' + member.full_name + '? Their history is kept and you can reactivate them later.', 'Deactivate');
+      if (!ok) return;
+      try {
+        await api('member_delete', { member_id: member.member_id });
+        toast('Member deactivated.', 'ok');
+        closeModal();
+        viewMembers();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    /* ---------------- membership actions ---------------- */
+    async function renewModal(ms) {
+      var plans;
+      try {
+        plans = (await api('plans_list', {})).plans.filter(function (p) { return p.active; });
+      } catch (err) {
+        toast(err.message, 'error');
+        return;
+      }
+      if (!plans.length) {
+        toast('Create an active plan first.', 'error');
+        return;
+      }
+
+      var planSel = selectInput('r-plan', plans.map(function (p) { return { value: p.plan_id, label: p.name + ' · ' + money(p.price) }; }), ms.plan_id);
+      var startInput = textInput('r-start', ms.status === 'Expired' ? todayISO() : todayISO(), { type: 'date' });
+      var body = h('div', {},
+        h('p', { class: 'small muted', text: 'Renewing extends from the day after the current end date when the membership is still running, otherwise from the start date you pick.' }),
+        h('div', { class: 'form-grid two' },
+          field('Plan', planSel),
+          field('Start date', startInput)
+        ),
+        h('p', { class: 'form-error', hidden: true, id: 'renew-error' })
+      );
+
+      var go = h('button', { class: 'btn btn-primary', type: 'button', text: 'Renew membership' });
+      go.addEventListener('click', async function () {
+        go.disabled = true;
+        go.textContent = 'Renewing…';
+        try {
+          var res = await api('membership_renew', {
+            membership_id: ms.membership_id,
+            plan_id: planSel.value,
+            start_date: startInput.value
+          });
+          toast('Renewed: ' + res.membership.start_date + ' to ' + res.membership.end_date, 'ok');
+          closeModal();
+          paymentModal(res.member, res.membership);
+        } catch (err) {
+          var errNode = el('renew-error');
+          if (errNode) { errNode.textContent = err.message; errNode.hidden = false; }
+        } finally {
+          go.disabled = false;
+          go.textContent = 'Renew membership';
+        }
+      });
+
+      openModal('Renew membership', body, { footer: h('div', { class: 'modal-foot' },
+        h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: closeModal }), go) });
+    }
+
+    async function assignModal(member) {
+      var plans;
+      try {
+        plans = (await api('plans_list', {})).plans.filter(function (p) { return p.active; });
+      } catch (err) {
+        toast(err.message, 'error');
+        return;
+      }
+      if (!plans.length) {
+        toast('Create an active plan first.', 'error');
+        return;
+      }
+      var planSel = selectInput('a-plan', plans.map(function (p) { return { value: p.plan_id, label: p.name + ' · ' + money(p.price) }; }), plans[0].plan_id);
+      var startInput = textInput('a-start', todayISO(), { type: 'date' });
+      var priceInput = textInput('a-price', plans[0].price, { type: 'number', step: '0.01', min: '0' });
+      planSel.addEventListener('change', function () {
+        var p = plans.filter(function (x) { return x.plan_id === planSel.value; })[0];
+        if (p) priceInput.value = p.price;
+      });
+
+      var body = h('div', {}, h('div', { class: 'form-grid two' },
+        field('Plan', planSel),
+        field('Start date', startInput),
+        field('Price due', priceInput)
+      ), h('p', { class: 'form-error', hidden: true, id: 'assign-error' }));
+
+      var go = h('button', { class: 'btn btn-primary', type: 'button', text: 'Assign plan' });
+      go.addEventListener('click', async function () {
+        go.disabled = true;
+        go.textContent = 'Saving…';
+        try {
+          var res = await api('membership_assign', {
+            member_id: member.member_id,
+            plan_id: planSel.value,
+            start_date: startInput.value,
+            price_due: priceInput.value
+          });
+          toast(res.queued ? 'Plan queued after the current membership.' : 'Plan assigned.', 'ok');
+          closeModal();
+          if (res.membership.balance_due > 0) paymentModal(res.member, res.membership);
+          else openMember(member.member_id);
+        } catch (err) {
+          var errNode = el('assign-error');
+          if (errNode) { errNode.textContent = err.message; errNode.hidden = false; }
+        } finally {
+          go.disabled = false;
+          go.textContent = 'Assign plan';
+        }
+      });
+
+      openModal('Assign a plan', body, { footer: h('div', { class: 'modal-foot' },
+        h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: closeModal }), go) });
+    }
+
+    function freezeModal(ms) {
+      var startInput = textInput('z-start', todayISO(), { type: 'date' });
+      var endInput = textInput('z-end', daysAgoISO(-7), { type: 'date' });
+      var reasonInput = textInput('z-reason', '', { maxlength: 160, placeholder: 'Travel, injury, etc.' });
+      var body = h('div', {},
+        h('p', { class: 'small muted', text: 'Frozen days are added to the end of the membership. The member cannot check in while frozen.' }),
+        h('div', { class: 'form-grid two' },
+          field('Freeze from', startInput),
+          field('Freeze until', endInput)
+        ),
+        field('Reason (optional)', reasonInput),
+        h('p', { class: 'form-error', hidden: true, id: 'freeze-error' })
+      );
+      var go = h('button', { class: 'btn btn-primary', type: 'button', text: 'Freeze membership' });
+      go.addEventListener('click', async function () {
+        go.disabled = true;
+        try {
+          var res = await api('membership_freeze', {
+            membership_id: ms.membership_id,
+            freeze_start: startInput.value,
+            freeze_end: endInput.value,
+            reason: reasonInput.value
+          });
+          toast('Frozen until ' + dateLabel(res.freeze_end) + '. New end date ' + dateLabel(res.end_date), 'ok');
+          closeModal();
+        } catch (err) {
+          var errNode = el('freeze-error');
+          if (errNode) { errNode.textContent = err.message; errNode.hidden = false; }
+        } finally {
+          go.disabled = false;
+        }
+      });
+      openModal('Freeze membership', body, { footer: h('div', { class: 'modal-foot' },
+        h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: closeModal }), go) });
+    }
+
+    async function unfreeze(ms) {
+      var ok = await confirmDialog('Unfreeze membership', 'Unfreeze now? Unused frozen days are returned to the end date.', 'Unfreeze');
+      if (!ok) return;
+      try {
+        var res = await api('membership_unfreeze', { membership_id: ms.membership_id });
+        toast('Unfrozen. New end date ' + dateLabel(res.end_date), 'ok');
+        closeModal();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    /* ---------------- payments ---------------- */
+    function paymentModal(member, ms) {
+      var amountInput = textInput('p-amount', ms.balance_due > 0 ? ms.balance_due : ms.price_due, { type: 'number', step: '0.01', min: '0.01' });
+      var dateInput = textInput('p-date', todayISO(), { type: 'date' });
+      var methodSel = selectInput('p-method', [
+        { value: 'cash', label: 'Cash' }, { value: 'card', label: 'Card' },
+        { value: 'e-wallet', label: 'E-wallet' }, { value: 'bank transfer', label: 'Bank transfer' }
+      ], 'cash');
+      var refInput = textInput('p-ref', '', { maxlength: 60, placeholder: 'Optional' });
+
+      var body = h('div', {},
+        h('p', { class: 'small muted', text: 'Balance due: ' + money(ms.balance_due) + ' of ' + money(ms.price_due) + '. Partial payments are allowed.' }),
+        h('div', { class: 'form-grid two' },
+          field('Amount', amountInput),
+          field('Date', dateInput),
+          field('Method', methodSel),
+          field('Reference no.', refInput)
+        ),
+        h('p', { class: 'form-error', hidden: true, id: 'pay-error' })
+      );
+
+      var go = h('button', { class: 'btn btn-primary', type: 'button', text: 'Record payment' });
+      go.addEventListener('click', async function () {
+        go.disabled = true;
+        go.textContent = 'Recording…';
+        try {
+          var res = await api('payment_record', {
+            member_id: member.member_id,
+            membership_id: ms.membership_id,
+            amount: amountInput.value,
+            date: dateInput.value,
+            method: methodSel.value,
+            reference_no: refInput.value
+          });
+          toast('Payment recorded. Receipt ' + res.payment.receipt_no, 'ok');
+          receiptModal(res.payment.payment_id);
+        } catch (err) {
+          var errNode = el('pay-error');
+          if (errNode) { errNode.textContent = err.message; errNode.hidden = false; }
+        } finally {
+          go.disabled = false;
+          go.textContent = 'Record payment';
+        }
+      });
+
+      openModal('Record payment', body, { footer: h('div', { class: 'modal-foot' },
+        h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: closeModal }), go) });
+    }
+
+    async function receiptModal(paymentId) {
+      var body = skeletonList(4);
+      openModal('Receipt', body);
+      try {
+        var r = await api('receipt_get', { payment_id: paymentId });
+        clear(body);
+        var sym = r.currency_symbol || '$';
+        var receipt = h('div', { class: 'receipt' },
+          h('h3', { text: r.gym_name }),
+          r.contact_address ? h('p', { class: 'small', style: 'text-align:center;margin:0 0 4px', text: r.contact_address }) : null,
+          r.contact_phone ? h('p', { class: 'small', style: 'text-align:center;margin:0 0 4px', text: r.contact_phone }) : null,
+          h('hr'),
+          h('div', { class: 'receipt-line' }, h('span', { text: 'Receipt' }), h('strong', { text: r.receipt_no })),
+          h('div', { class: 'receipt-line' }, h('span', { text: 'Date' }), h('span', { text: r.date })),
+          h('div', { class: 'receipt-line' }, h('span', { text: 'Member' }), h('span', { text: r.member_name + ' (' + r.member_id + ')' })),
+          h('div', { class: 'receipt-line' }, h('span', { text: 'Plan' }), h('span', { text: r.plan_name })),
+          h('div', { class: 'receipt-line' }, h('span', { text: 'Period' }), h('span', { text: r.period })),
+          h('div', { class: 'receipt-line' }, h('span', { text: 'Method' }), h('span', { text: r.method })),
+          r.reference_no ? h('div', { class: 'receipt-line' }, h('span', { text: 'Reference' }), h('span', { text: r.reference_no })) : null,
+          h('hr'),
+          h('div', { class: 'receipt-line' }, h('strong', { text: 'Paid' }), h('strong', { text: sym + r.amount.toFixed(2) })),
+          h('div', { class: 'receipt-line' }, h('span', { text: 'Balance due' }), h('span', { text: sym + r.balance_due.toFixed(2) })),
+          h('hr'),
+          r.footer ? h('p', { class: 'small', style: 'text-align:center', text: r.footer }) : null,
+          h('p', { class: 'small', style: 'text-align:center', text: 'Received by ' + r.received_by })
+        );
+        body.appendChild(receipt);
+        var printBtn = h('button', { class: 'btn btn-primary', type: 'button', text: 'Print receipt', onclick: function () { window.print(); } });
+        body.appendChild(h('div', { class: 'modal-foot no-print', style: 'margin-top:14px' }, printBtn));
+      } catch (err) {
+        clear(body);
+        body.appendChild(h('p', { class: 'form-error', text: err.message }));
+      }
+    }
+
+    async function viewPayments() {
+      setLoading('Payments');
+      var root = el('view-root');
+      var fromInput = textInput('pay-from', state.payments.from || daysAgoISO(30), { type: 'date' });
+      var toInput = textInput('pay-to', state.payments.to || todayISO(), { type: 'date' });
+      var search = h('input', { type: 'search', id: 'pay-search', placeholder: 'Search member, receipt or reference', value: state.payments.q });
+      var listBox = h('div', {}, skeletonList(5));
+
+      clear(root);
+      root.appendChild(h('div', { class: 'view-head' }, h('h1', { text: 'Payments' }), h('div', { class: 'view-actions' },
+        state.role === 'admin' ? h('button', { class: 'btn btn-ghost', type: 'button', text: 'Export CSV', onclick: function () { exportCsv('payments', fromInput.value, toInput.value); } }) : null,
+        h('button', { class: 'btn btn-ghost', type: 'button', text: 'Print', onclick: function () { window.print(); } })
+      )));
+      root.appendChild(h('div', { class: 'toolbar' }, fromInput, toInput, search));
+      root.appendChild(listBox);
+
+      var debounce;
+      function load() {
+        state.payments.from = fromInput.value;
+        state.payments.to = toInput.value;
+        state.payments.q = search.value.trim();
+        run();
+      }
+      fromInput.addEventListener('change', load);
+      toInput.addEventListener('change', load);
+      search.addEventListener('input', function () { clearTimeout(debounce); debounce = setTimeout(load, 280); });
+
+      async function run() {
+        clear(listBox);
+        listBox.appendChild(skeletonList(4));
+        var data;
+        try {
+          data = await api('payments_list', {
+            from: fromInput.value, to: toInput.value, q: state.payments.q, page: 1, page_size: 100
+          });
+        } catch (err) {
+          clear(listBox);
+          listBox.appendChild(emptyState("Can't load payments", err.message, h('button', { class: 'btn btn-primary', type: 'button', text: 'Retry', onclick: run })));
+          return;
+        }
+        clear(listBox);
+
+        var summary = h('div', { class: 'kpi-grid', style: 'margin-bottom:14px' },
+          h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Collected' }), h('p', { class: 'kpi-value good', text: money(data.totals.amount) })),
+          h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Payments' }), h('p', { class: 'kpi-value', text: data.totals.count })),
+          h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Voided' }), h('p', { class: 'kpi-value bad', text: data.totals.voided_count })),
+          h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Cash' }), h('p', { class: 'kpi-value', text: money(data.totals.by_method.cash || 0) }))
+        );
+        listBox.appendChild(summary);
+
+        if (!data.items.length) {
+          listBox.appendChild(emptyState('No payments in this range', 'Try a wider date range or clear the search.'));
+          return;
+        }
+
+        var table = h('table', {},
+          h('thead', {}, h('tr', {},
+            h('th', { text: 'Date' }), h('th', { text: 'Member' }), h('th', { text: 'Amount' }),
+            h('th', { text: 'Method' }), h('th', { text: 'Receipt' }), h('th', { text: '' })
+          )),
+          h('tbody', {}, data.items.map(function (p) {
+            return h('tr', {},
+              h('td', { text: dateLabel(p.date) }),
+              h('td', {}, h('strong', { text: p.member_name || p.member_id }), p.voided ? h('div', { class: 'small', text: 'VOID: ' + p.void_reason }) : null),
+              h('td', { text: money(p.amount), style: p.voided ? 'text-decoration:line-through' : '' }),
+              h('td', { class: 'small', text: p.method }),
+              h('td', { class: 'small', text: p.receipt_no }),
+              h('td', {}, h('div', { class: 'row-actions' },
+                p.voided ? null : h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Receipt', onclick: function () { receiptModal(p.payment_id); } }),
+                !p.voided && state.role === 'admin' ? h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Void', onclick: function () { voidPayment(p); } }) : null
+              ))
+            );
+          }))
+        );
+        listBox.appendChild(h('div', { class: 'panel' }, h('div', { class: 'table-wrap' }, table)));
+      }
+
+      run();
+    }
+
+    async function voidPayment(payment) {
+      var reasonInput = textInput('void-reason', '', { maxlength: 200, placeholder: 'Why is this payment being voided?' });
+      var body = h('div', {},
+        h('p', { text: 'Void ' + money(payment.amount) + ' from ' + payment.member_name + '? The record stays, marked void, and is logged.' }),
+        field('Reason *', reasonInput),
+        h('p', { class: 'form-error', hidden: true, id: 'void-error' })
+      );
+      var go = h('button', { class: 'btn btn-primary', type: 'button', text: 'Void payment' });
+      go.addEventListener('click', async function () {
+        if (reasonInput.value.trim().length < 3) {
+          el('void-error').textContent = 'Give a reason of at least 3 characters.';
+          el('void-error').hidden = false;
+          return;
+        }
+        go.disabled = true;
+        try {
+          await api('payment_void', { payment_id: payment.payment_id, reason: reasonInput.value.trim() });
+          toast('Payment voided.', 'ok');
+          closeModal();
+          viewPayments();
+        } catch (err) {
+          el('void-error').textContent = err.message;
+          el('void-error').hidden = false;
+        } finally {
+          go.disabled = false;
+        }
+      });
+      openModal('Void payment', body, { footer: h('div', { class: 'modal-foot' },
+        h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: closeModal }), go) });
+    }
+
+    /* =================================================================
+       PLANS
+       ================================================================= */
+    async function viewPlans() {
+      setLoading('Plans');
+      var root = el('view-root');
+      var listBox = h('div', {}, skeletonList(4));
+
+      clear(root);
+      root.appendChild(h('div', { class: 'view-head' }, h('h1', { text: 'Plans' }), h('div', { class: 'view-actions' },
+        state.role === 'admin' ? h('button', { class: 'btn btn-primary', type: 'button', text: 'New plan', onclick: function () { planForm(null); } }) : null
+      )));
+      root.appendChild(listBox);
+
+      try {
+        var data = await api('plans_list', {});
+        clear(listBox);
+        if (!data.plans.length) {
+          listBox.appendChild(emptyState('No plans yet', 'Add your first membership plan: day pass, monthly, annual…',
+            h('button', { class: 'btn btn-primary', type: 'button', text: 'New plan', onclick: function () { planForm(null); } })));
+          return;
+        }
+        var table = h('table', {},
+          h('thead', {}, h('tr', {},
+            h('th', { text: 'Plan' }), h('th', { text: 'Duration' }), h('th', { text: 'Price' }),
+            h('th', { text: 'Active members' }), h('th', { text: 'Status' }), h('th', { text: '' })
+          )),
+          h('tbody', {}, data.plans.map(function (p) {
+            return h('tr', {},
+              h('td', {}, h('strong', { text: p.name }), p.description ? h('div', { class: 'small muted', text: p.description }) : null),
+              h('td', { text: p.duration_value + ' ' + p.duration_unit }),
+              h('td', { text: money(p.price) }),
+              h('td', { text: p.active_members }),
+              h('td', {}, h('span', { class: 'badge ' + (p.active ? 'active' : 'expired'), text: p.active ? 'active' : 'inactive' })),
+              h('td', {}, h('div', { class: 'row-actions' },
+                h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Edit', onclick: function () { planForm(p); } }),
+                p.active && state.role === 'admin' ? h('button', { class: 'btn btn-ghost btn-sm', type: 'button', text: 'Deactivate', onclick: function () { deactivatePlan(p); } }) : null
+              ))
+            );
+          }))
+        );
+        listBox.appendChild(h('div', { class: 'panel' }, h('div', { class: 'table-wrap' }, table)));
+      } catch (err) {
+        clear(listBox);
+        listBox.appendChild(emptyState("Can't load plans", err.message, h('button', { class: 'btn btn-primary', type: 'button', text: 'Retry', onclick: viewPlans })));
+      }
+    }
+
+    function planForm(plan) {
+      var p = plan || {};
+      var isEdit = !!(p.plan_id);
+      var form = h('div', { class: 'form-grid two' },
+        field('Plan name *', textInput('pl-name', p.name, { maxlength: 60, placeholder: 'Monthly' })),
+        field('Price *', textInput('pl-price', p.price != null ? p.price : '', { type: 'number', step: '0.01', min: '0' })),
+        field('Duration value *', textInput('pl-value', p.duration_value != null ? p.duration_value : 1, { type: 'number', min: '1', step: '1' })),
+        field('Duration unit', selectInput('pl-unit', [{ value: 'months', label: 'Months' }, { value: 'days', label: 'Days' }], p.duration_unit || 'months')),
+        field('Description', textInput('pl-desc', p.description, { maxlength: 240 })),
+        field('Active', selectInput('pl-active', [{ value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }], p.active === false ? 'false' : 'true'))
+      );
+      var errorNode = h('p', { class: 'form-error', hidden: true });
+      var go = h('button', { class: 'btn btn-primary', type: 'button', text: isEdit ? 'Save plan' : 'Create plan' });
+      go.addEventListener('click', async function () {
+        go.disabled = true;
+        try {
+          await api('plans_save', {
+            plan: {
+              plan_id: p.plan_id || '',
+              name: $('#pl-name', form).value.trim(),
+              duration_value: $('#pl-value', form).value,
+              duration_unit: $('#pl-unit', form).value,
+              price: $('#pl-price', form).value,
+              description: $('#pl-desc', form).value.trim(),
+              active: $('#pl-active', form).value === 'true'
+            }
+          });
+          toast(isEdit ? 'Plan saved.' : 'Plan created.', 'ok');
+          closeModal();
+          viewPlans();
+        } catch (err) {
+          errorNode.textContent = err.message;
+          errorNode.hidden = false;
+        } finally {
+          go.disabled = false;
+        }
+      });
+      openModal(isEdit ? 'Edit plan' : 'New plan', h('div', {}, form, errorNode), {
+        footer: h('div', { class: 'modal-foot' },
+          h('button', { class: 'btn btn-ghost', type: 'button', text: 'Cancel', onclick: closeModal }), go)
+      });
+    }
+
+    async function deactivatePlan(plan) {
+      var ok = await confirmDialog('Deactivate plan', 'Deactivate ' + plan.name + '? Existing memberships keep working; it just stops being offered.', 'Deactivate');
+      if (!ok) return;
+      try {
+        await api('plan_deactivate', { plan_id: plan.plan_id });
+        toast('Plan deactivated.', 'ok');
+        viewPlans();
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+    }
+
+    /* =================================================================
+       REPORTS
+       ================================================================= */
+    function exportCsv(type, from, to) {
+      api('export_data', { type: type, from: from || '', to: to || '' }).then(function (res) {
+        var blob = new Blob(['\ufeff' + res.csv], { type: 'text/csv;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = h('a', { href: url, download: res.filename });
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        toast('Export ready: ' + res.filename, 'ok');
+      }).catch(function (err) { toast(err.message, 'error'); });
+    }
+
+    async function viewReports() {
+      setLoading('Reports');
+      var root = el('view-root');
+      var fromInput = textInput('rep-from', state.reports.from || daysAgoISO(29), { type: 'date' });
+      var toInput = textInput('rep-to', state.reports.to || todayISO(), { type: 'date' });
+      var out = h('div', { id: 'report-out' }, skeletonList(5));
+
+      clear(root);
+      root.appendChild(h('div', { class: 'view-head' }, h('h1', { text: 'Reports' }), h('div', { class: 'view-actions' },
+        state.role === 'admin' ? h('button', { class: 'btn btn-ghost', type: 'button', text: 'Export members', onclick: function () { exportCsv('members'); } }) : null,
+        h('button', { class: 'btn btn-ghost', type: 'button', text: 'Print', onclick: function () { window.print(); } })
+      )));
+      root.appendChild(h('div', { class: 'toolbar' }, fromInput, toInput,
+        h('button', { class: 'btn btn-primary', type: 'button', text: 'Run report', onclick: run })));
+      root.appendChild(out);
+
+      async function run() {
+        state.reports.from = fromInput.value;
+        state.reports.to = toInput.value;
+        clear(out);
+        out.appendChild(skeletonList(4));
+        var data;
+        try {
+          data = await api('report_range', { from: fromInput.value, to: toInput.value });
+        } catch (err) {
+          clear(out);
+          out.appendChild(h('p', { class: 'form-error', text: err.message }));
+          return;
+        }
+        clear(out);
+        out.appendChild(h('p', { class: 'small muted', text: 'Range: ' + dateLabel(data.from) + ' – ' + dateLabel(data.to) }));
+
+        out.appendChild(h('div', { class: 'kpi-grid' },
+          h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Revenue' }), h('p', { class: 'kpi-value good', text: money(data.revenue.total) })),
+          h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Payments' }), h('p', { class: 'kpi-value', text: data.revenue.count })),
+          h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'Check-ins' }), h('p', { class: 'kpi-value', text: data.attendance.total })),
+          h('div', { class: 'kpi' }, h('p', { class: 'kpi-label', text: 'New members' }), h('p', { class: 'kpi-value', text: data.new_members }))
+        ));
+
+        out.appendChild(h('div', { class: 'charts' },
+          h('div', { class: 'chart-box' }, h('h3', { text: 'Revenue by day' }), h('div', { class: 'chart-holder', id: 'rep-rev' })),
+          h('div', { class: 'chart-box' }, h('h3', { text: 'Check-ins by day' }), h('div', { class: 'chart-holder', id: 'rep-att' }))
+        ));
+
+        var t = chartTheme();
+        var revDays = Object.keys(data.revenue.by_day).sort();
+        chartInto(el('rep-rev'), {
+          type: 'bar',
+          data: { labels: revDays, datasets: [{ data: revDays.map(function (d) { return data.revenue.by_day[d]; }), backgroundColor: t.brand, borderRadius: 4 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: t.text, maxRotation: 0, autoSkip: true }, grid: { display: false } }, y: { ticks: { color: t.text }, grid: { color: t.grid }, beginAtZero: true } } }
+        });
+        var attDays = Object.keys(data.attendance.by_day).sort();
+        chartInto(el('rep-att'), {
+          type: 'line',
+          data: { labels: attDays, datasets: [{ data: attDays.map(function (d) { return data.attendance.by_day[d]; }), borderColor: t.second, backgroundColor: 'transparent', tension: .25 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: t.text, autoSkip: true }, grid: { display: false } }, y: { ticks: { color: t.text }, grid: { color: t.grid }, beginAtZero: true, precision: 0 } } }
+        });
+
+        var methods = Object.keys(data.revenue.by_method);
+        out.appendChild(h('section', { class: 'panel' },
+          h('div', { class: 'panel-head' }, h('h2', { text: 'Revenue by method' })),
+          methods.length
+            ? h('table', {}, h('thead', {}, h('tr', {}, h('th', { text: 'Method' }), h('th', { text: 'Amount' }))),
+                h('tbody', {}, methods.map(function (k) {
+                  return h('tr', {}, h('td', { text: k }), h('td', { text: money(data.revenue.by_method[k]) }));
+                })))
+            : h('p', { class: 'small muted', text: 'No payments in this range.' })
+        ));
+
+        out.appendChild(h('section', { class: 'panel' },
+          h('div', { class: 'panel-head' }, h('h2', { text: 'Most frequent visitors' })),
+          data.top_members.length
+            ? h('table', {}, h('thead', {}, h('tr', {}, h('th', { text: 'Member' }), h('th', { text: 'Visits' }))),
+                h('tbody', {}, data.top_members.map(function (m) {
+                  return h('tr', {}, h('td', { text: m.full_name + ' · ' + m.member_id }), h('td', { text: m.visits }));
+                })))
+            : h('p', { class: 'small muted', text: 'No check-ins in this range.' })
+        ));
+
+        if (state.role === 'admin') {
+          out.appendChild(h('div', { class: 'toolbar no-print' },
+            h('button', { class: 'btn btn-ghost', type: 'button', text: 'Export payments', onclick: function () { exportCsv('payments', data.from, data.to); } }),
+            h('button', { class: 'btn btn-ghost', type: 'button', text: 'Export attendance', onclick: function () { exportCsv('attendance', data.from, data.to); } })
+          ));
+        }
+      }
+
+      run();
+    }
+
+    /* =================================================================
+       SETTINGS
+       ================================================================= */
+    async function viewSettings() {
+      setLoading('Settings');
+      var root = el('view-root');
+      var data;
+      try {
+        data = await api('settings_get', {});
+      } catch (err) {
+        setServerError(viewSettings);
+        return;
+      }
+      var s = data.settings || {};
+      state.settings = s;
+      var isAdmin = state.role === 'admin';
+
+      clear(root);
+      root.appendChild(h('div', { class: 'view-head' }, h('h1', { text: 'Settings' })));
+
+      if (!isAdmin) {
+        root.appendChild(h('div', { class: 'notice', text: 'Only an admin can change settings. Ask the owner for the admin PIN.' }));
+        return;
+      }
+
+      var form = h('div', { class: 'form' },
+        h('div', { class: 'form-grid two' },
+          field('Gym name', textInput('s-gym_name', s.gym_name, { maxlength: 80 })),
+          field('Currency symbol', textInput('s-currency_symbol', s.currency_symbol, { maxlength: 5 })),
+          field('Contact phone', textInput('s-contact_phone', s.contact_phone, { maxlength: 32, type: 'tel' })),
+          field('Contact email', textInput('s-contact_email', s.contact_email, { maxlength: 120, type: 'email' })),
+          field('Expiry warning (days)', textInput('s-expiry_warning_days', s.expiry_warning_days, { type: 'number', min: '0', max: '365' })),
+          field('Duplicate check-in window (minutes)', textInput('s-checkin_window_minutes', s.checkin_window_minutes, { type: 'number', min: '1', max: '1440' })),
+          field('Default theme', selectInput('s-theme_default', [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }], s.theme_default || 'light'))
+        ),
+        field('Address', textInput('s-contact_address', s.contact_address, { maxlength: 240 }), 'Shown in the footer, contact page and schema markup.'),
+        field('Opening hours', textInput('s-opening_hours', s.opening_hours, { maxlength: 240 })),
+        field('Logo URL (https://)', textInput('s-logo_url', s.logo_url, { maxlength: 500, type: 'url' })),
+        field('Facebook page URL (https://)', textInput('s-facebook_url', s.facebook_url, { maxlength: 500, type: 'url' })),
+        field('Receipt footer', textInput('s-receipt_footer', s.receipt_footer, { maxlength: 200 })),
+        h('p', { class: 'section-title', text: 'Reminders' }),
+        h('div', { class: 'form-grid two' },
+          field('Daily email to', textInput('s-reminder_email_to', s.reminder_email_to, { maxlength: 120, type: 'email' }), 'Leave empty to use the contact email.'),
+          field('Warn this many days ahead', textInput('s-reminder_days', s.reminder_days, { type: 'number', min: '0', max: '30' }))
+        ),
+        field('Expiring message', h('textarea', { id: 's-template_expiring', rows: 3, maxlength: 900 }), 'Placeholders: {name} {gym} {end_date} {days_left} {balance} {currency} {plan}'),
+        field('Expired message', h('textarea', { id: 's-template_expired', rows: 3, maxlength: 900 })),
+        field('Payment due message', h('textarea', { id: 's-template_payment_due', rows: 3, maxlength: 900 })),
+        h('button', { class: 'btn btn-primary', type: 'button', text: 'Save settings', id: 'save-settings' }),
+        h('p', { class: 'form-error', hidden: true, id: 'settings-error' })
+      );
+      $('#s-template_expiring', form).value = s.template_expiring || '';
+      $('#s-template_expired', form).value = s.template_expired || '';
+      $('#s-template_payment_due', form).value = s.template_payment_due || '';
+
+      ['gym_name', 'currency_symbol', 'contact_phone', 'contact_email', 'expiry_warning_days', 'checkin_window_minutes', 'theme_default', 'contact_address', 'opening_hours', 'logo_url', 'facebook_url', 'receipt_footer', 'reminder_email_to', 'reminder_days', 'template_expiring', 'template_expired', 'template_payment_due'].forEach(function (key) {
+        var node = $('#s-' + key, form);
+        if (!node) return;
+        node.addEventListener('input', function () { node.dataset.touched = '1'; });
+      });
+
+      $('#save-settings', form).addEventListener('click', async function (e) {
+        var btn = e.currentTarget;
+        var errNode = el('settings-error');
+        errNode.hidden = true;
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        var payload = {};
+        ['gym_name', 'currency_symbol', 'contact_phone', 'contact_email', 'expiry_warning_days', 'checkin_window_minutes', 'theme_default', 'contact_address', 'opening_hours', 'logo_url', 'facebook_url', 'receipt_footer', 'reminder_email_to', 'reminder_days', 'template_expiring', 'template_expired', 'template_payment_due'].forEach(function (key) {
+          var node = $('#s-' + key, form);
+          if (node) payload[key] = node.value.trim();
+        });
+        try {
+          var res = await api('settings_save', { settings: payload });
+          state.settings = res.settings || state.settings;
+          state.gym = Object.assign({}, state.gym, res.public || {});
+          el('side-name').textContent = state.gym.gym_name || 'Gym';
+          toast('Settings saved.', 'ok');
+        } catch (err) {
+          errNode.textContent = err.message;
+          errNode.hidden = false;
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Save settings';
+        }
+      });
+
+      root.appendChild(h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h2', { text: 'Gym details' })), form));
+
+      /* PIN change */
+      var pinForm = h('div', { class: 'form-grid two' },
+        field('Current PIN', h('input', { id: 'pin-current', type: 'password', autocomplete: 'current-password', maxlength: 64 })),
+        field('New PIN', h('input', { id: 'pin-new', type: 'password', autocomplete: 'new-password', maxlength: 64 }), '6–64 characters. Changing it signs everyone out.')
+      );
+      var pinBtn = h('button', { class: 'btn btn-primary', type: 'button', text: 'Change admin PIN' });
+      var pinError = h('p', { class: 'form-error', hidden: true });
+      pinBtn.addEventListener('click', async function () {
+        pinError.hidden = true;
+        pinBtn.disabled = true;
+        try {
+          await api('pin_change', { current_pin: el('pin-current').value, new_pin: el('pin-new').value });
+          toast('PIN changed. Please sign in again.', 'ok');
+          signOut(true);
+        } catch (err) {
+          pinError.textContent = err.message;
+          pinError.hidden = false;
+        } finally {
+          pinBtn.disabled = false;
+        }
+      });
+      root.appendChild(h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h2', { text: 'Security' })),
+        pinForm, h('div', { class: 'toolbar', style: 'margin-top:12px' }, pinBtn), pinError));
+
+      /* Data tools */
+      var backupBtn = h('button', { class: 'btn btn-ghost', type: 'button', text: 'Back up now' });
+      backupBtn.addEventListener('click', async function () {
+        backupBtn.disabled = true;
+        backupBtn.textContent = 'Backing up…';
+        try {
+          var res = await api('backup_run', {});
+          toast('Backup created: ' + res.name, 'ok');
+        } catch (err) {
+          toast(err.message, 'error');
+        } finally {
+          backupBtn.disabled = false;
+          backupBtn.textContent = 'Back up now';
+        }
+      });
+
+      var clearBtn = h('button', { class: 'btn btn-ghost', type: 'button', text: 'Clear sample data' });
+      clearBtn.addEventListener('click', async function () {
+        var ok = await confirmDialog('Clear sample data', 'Remove the sample members, plans, payments and check-ins that ship with setup? Your own data is not touched.', 'Clear sample data');
+        if (!ok) return;
+        try {
+          var res = await api('sample_clear', {});
+          toast('Removed ' + res.members + ' sample members and ' + res.plans + ' sample plans.', 'ok');
+        } catch (err) {
+          toast(err.message, 'error');
+        }
+      });
+
+      root.appendChild(h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h2', { text: 'Data tools' })),
+        h('p', { class: 'small muted', text: 'A weekly backup copy is saved to Google Drive in the Gym Tracker Backups folder.' }),
+        h('div', { class: 'toolbar' }, backupBtn, clearBtn)));
+
+      root.appendChild(importPanel());
+    }
+
+    function importPanel() {
+      var area = h('textarea', { id: 'import-csv', rows: 6, placeholder: 'full_name,phone,email,address,notes,date_joined\nJane Doe,07700900123,jane@example.com,12 High St,Paid in cash,2026-01-15' });
+      var previewBox = h('div', { style: 'margin-top:12px' });
+      var previewBtn = h('button', { class: 'btn btn-ghost', type: 'button', text: 'Preview import' });
+      var commitBtn = h('button', { class: 'btn btn-primary', type: 'button', text: 'Import valid rows', disabled: true });
+      var staged = [];
+
+      previewBtn.addEventListener('click', async function () {
+        previewBox.textContent = '';
+        previewBox.appendChild(skeletonList(2));
+        try {
+          var res = await api('import_preview', { csv: area.value });
+          staged = res.rows.filter(function (r) { return r.ok; });
+          previewBox.textContent = '';
+          previewBox.appendChild(h('p', { class: 'small muted', text: res.valid_count + ' ready · ' + res.invalid_count + ' with problems' + (res.truncated ? ' (first 500 rows only)' : '') }));
+          var table = h('table', {},
+            h('thead', {}, h('tr', {}, h('th', { text: 'Row' }), h('th', { text: 'Name' }), h('th', { text: 'Phone / email' }), h('th', { text: 'Problems' }))),
+            h('tbody', {}, res.rows.slice(0, 100).map(function (r) {
+              return h('tr', {},
+                h('td', { text: r.row }),
+                h('td', { text: r.values.full_name || '' }),
+                h('td', { class: 'small', text: (r.values.phone || '') + ' ' + (r.values.email || '') }),
+                h('td', { class: 'small', text: r.errors.length ? r.errors.join(' ') : 'OK' })
+              );
+            }))
+          );
+          previewBox.appendChild(h('div', { class: 'table-wrap' }, table));
+          commitBtn.disabled = staged.length === 0;
+        } catch (err) {
+          previewBox.textContent = '';
+          previewBox.appendChild(h('p', { class: 'form-error', text: err.message }));
+          commitBtn.disabled = true;
+        }
+      });
+
+      commitBtn.addEventListener('click', async function () {
+        commitBtn.disabled = true;
+        commitBtn.textContent = 'Importing…';
+        try {
+          var res = await api('import_commit', { rows: staged });
+          toast('Imported ' + res.created + ' members, skipped ' + res.skipped + '.', 'ok');
+          area.value = '';
+          previewBox.textContent = '';
+          staged = [];
+        } catch (err) {
+          toast(err.message, 'error');
+          commitBtn.disabled = false;
+        } finally {
+          commitBtn.textContent = 'Import valid rows';
+        }
+      });
+
+      return h('section', { class: 'panel' }, h('div', { class: 'panel-head' }, h('h2', { text: 'Import members from CSV' })),
+        h('p', { class: 'small muted', text: 'Columns: full_name (required), phone, email, address, notes, date_joined (YYYY-MM-DD), emergency_name, emergency_phone. Nothing is written until you preview and confirm.' }),
+        h('div', { class: 'field' }, area),
+        h('div', { class: 'toolbar' }, previewBtn, commitBtn),
+        previewBox);
+    }
+
+    /* =================================================================
+       INQUIRIES
+       ================================================================= */
+    async function viewInquiries() {
+      setLoading('Inquiries');
+      var root = el('view-root');
+      var listBox = h('div', {}, skeletonList(4));
+      clear(root);
+      root.appendChild(h('div', { class: 'view-head' }, h('h1', { text: 'Inquiries' }),
+        h('span', { class: 'small muted', text: 'From the public join form' })));
+      root.appendChild(listBox);
+
+      try {
+        var data = await api('inquiries_list', {});
+        clear(listBox);
+        if (!data.items.length) {
+          listBox.appendChild(emptyState('No inquiries yet', 'Messages from the website join form appear here.'));
+          return;
+        }
+        var list = h('div', { class: 'cards-list' });
+        data.items.forEach(function (q) {
+          var row = h('div', { class: 'member-card' },
+            h('div', { class: 'member-card-top' },
+              h('strong', { text: q.full_name }),
+              h('span', { class: 'badge ' + (q.status === 'new' ? 'expiring' : q.status === 'contacted' ? 'frozen' : 'active'), text: q.status })
+            ),
+            h('div', { class: 'member-meta' },
+              h('span', { text: q.phone || 'no phone' }),
+              h('span', { text: q.email || 'no email' }),
+              h('span', { text: dateLabel(q.created_at) })
+            ),
+            q.message ? h('p', { class: 'small', style: 'margin:6px 0 0', text: q.message }) : null
+          );
+          var actions = h('div', { class: 'row-actions', style: 'margin-top:8px' });
+          if (q.phone) actions.appendChild(h('a', { class: 'btn btn-ghost btn-sm', href: 'tel:' + q.phone.replace(/[^\d+]/g, ''), text: 'Call' }));
+          if (q.email) actions.appendChild(h('a', { class: 'btn btn-ghost btn-sm', href: 'mailto:' + q.email, text: 'Email' }));
+          ['contacted', 'closed'].forEach(function (status) {
+            if (q.status === status) return;
+            actions.appendChild(h('button', {
+              class: 'btn btn-ghost btn-sm', type: 'button', text: 'Mark ' + status,
+              onclick: async function () {
+                try {
+                  await api('inquiry_status', { inquiry_id: q.inquiry_id, status: status });
+                  toast('Inquiry marked ' + status + '.', 'ok');
+                  viewInquiries();
+                } catch (err) { toast(err.message, 'error'); }
+              }
+            }));
+          });
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+        listBox.appendChild(list);
+      } catch (err) {
+        clear(listBox);
+        listBox.appendChild(h('p', { class: 'form-error', text: err.message }));
+      }
+    }
+
+    /* =================================================================
+       BOOT
+       ================================================================= */
+    function bindShell() {
+      $all('.nav-btn[data-view]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          closeSidebar();
+          setView(btn.dataset.view);
+        });
+      });
+
+      el('logout-btn').addEventListener('click', function () { signOut(); });
+
+      el('theme-btn').addEventListener('click', function () {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        if (state.view === 'dashboard') viewDashboard();
+        else if (state.view === 'reports') viewReports();
+      });
+
+      el('bar-checkin').addEventListener('click', function () { setView('checkin'); });
+      el('bar-member').addEventListener('click', function () { openMemberForm(null); });
+
+      el('menu-btn').addEventListener('click', function () {
+        var sidebar = el('sidebar');
+        var isOpen = sidebar.classList.toggle('open');
+        el('menu-btn').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (isOpen) {
+          var back = h('button', { class: 'sidebar-backdrop', 'aria-label': 'Close menu', onclick: closeSidebar });
+          back.id = 'sidebar-backdrop';
+          document.body.appendChild(back);
+        }
+      });
+    }
+
+    function closeSidebar() {
+      el('sidebar').classList.remove('open');
+      el('menu-btn').setAttribute('aria-expanded', 'false');
+      var back = el('sidebar-backdrop');
+      if (back) back.parentNode.removeChild(back);
+    }
+
+    async function boot() {
+      applyTheme(localStorage.getItem('gym_theme') || 'light');
+      bindLogin();
+      bindShell();
+
+      if (!configured) {
+        el('login-error').textContent = 'This dashboard is not connected yet. Add your Apps Script web app URL to config.js, then reload.';
+        el('login-error').hidden = false;
+        return;
+      }
+
+      if (!state.token) return;
+      try {
+        var session = await api('session', {});
+        state.role = session.role;
+        state.gym = session.gym || {};
+        el('login-view').hidden = true;
+        el('login-view').style.display = 'none';
+        el('app-view').hidden = false;
+        el('side-role').textContent = 'Signed in as ' + session.role;
+        el('side-name').textContent = state.gym.gym_name || 'Gym';
+        if (state.gym.logo_url) el('side-logo').src = state.gym.logo_url;
+        try {
+          var data = await api('settings_get', {});
+          state.settings = (data && data.settings) || {};
+          state.gym = Object.assign({}, state.gym, (data && data.public) || {});
+        } catch (e) {}
+        setView('dashboard');
+      } catch (err) {
+        signOut(true);
+      }
+    }
+
+    boot();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Terms of Membership | Gym</title>
+  <meta name="description" content="Membership terms for the gym, including payments, freezes and check-in rules." />
+  <meta property="og:title" content="Terms of Membership" />
+  <meta property="og:description" content="Membership terms, payments, freezes and check-in rules." />
+  <meta property="og:image" content="/og-image.png" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="Home">
+        <img class="brand-logo" src="/og-image.png" alt="" width="36" height="36" />
+        <span data-gym="name">Your Gym Name</span>
+      </a>
+      <a class="btn btn-ghost btn-sm" href="/">Home</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="wrap page-body">
+      <h1>Terms of Membership</h1>
+      <p class="updated">Last updated: <span id="updated">—</span></p>
+
+      <p class="notice">
+        <strong>Draft for review.</strong> These terms are a starting point, not legal advice. The gym owner should
+        have them checked against local consumer law before launch.
+      </p>
+
+      <h2>1. Your membership</h2>
+      <p>
+        A membership lets you use the gym during opening hours for the period shown on your membership record.
+        Plans, prices and duration are set by <span data-gym="name">Your Gym Name</span> and shown on the
+        <a href="/#plans">plans section</a> of the website or at the front desk. Prices may change for future
+        memberships; a membership already paid for is not affected.
+      </p>
+
+      <h2>2. Payment</h2>
+      <ul>
+        <li>Payment is due when a membership starts unless the gym agrees otherwise.</li>
+        <li>Partial payments are recorded against the membership. The balance stays due until it is paid.</li>
+        <li>Every payment gets a receipt number. Keep it if you need proof of payment.</li>
+        <li>Unpaid balances may stop a renewal or a check-in being allowed.</li>
+      </ul>
+
+      <h2>3. Start and end dates</h2>
+      <p>
+        Your membership starts on the date recorded at sign-up and ends the day before the same date in the final
+        month (for example 15 January to 14 February for a one-month plan). Renewing early adds the new period after
+        the current one ends, so no paid days are lost.
+      </p>
+
+      <h2>4. Freezing a membership</h2>
+      <ul>
+        <li>You can ask to freeze your membership for a date range agreed with staff.</li>
+        <li>Frozen days are added to the end of your membership.</li>
+        <li>You cannot check in while your membership is frozen.</li>
+        <li>If you come back early, the unused frozen days are returned to your end date.</li>
+      </ul>
+
+      <h2>5. Check-in</h2>
+      <ul>
+        <li>Check in at the front desk with your member ID, phone number or name.</li>
+        <li>Check-in is refused if your membership has expired, has not started, is frozen, or if the member record is inactive.</li>
+        <li>Repeat check-ins within a short window (set by the gym) count as one visit.</li>
+      </ul>
+
+      <h2>6. Conduct and safety</h2>
+      <p>
+        Members must follow the gym&rsquo;s rules and staff instructions, use equipment as intended, and respect other
+        members. The gym may end a membership for serious or repeated breaches. Re-rack weights, wipe down equipment
+        and report anything damaged.
+      </p>
+
+      <h2>7. Health and risk</h2>
+      <p>
+        Exercise carries a risk of injury. You confirm you are fit enough to train and that you have told staff about
+        any condition that affects your safety. If you are unsure, speak to a doctor first. The gym&rsquo;s insurance
+        and liability position should be confirmed by the owner before launch.
+      </p>
+
+      <h2>8. Cancellations and refunds</h2>
+      <p>
+        Cancellations and refunds are handled by the gym on a case-by-case basis under local consumer law. Contact us
+        before cancelling so we can confirm your end date and any balance.
+      </p>
+
+      <h2>9. Your information</h2>
+      <p>
+        We use your details to run your membership, as described in our <a href="/privacy">Privacy Policy</a>.
+      </p>
+
+      <h2>10. Contact</h2>
+      <p>
+        <span data-gym="name">Your Gym Name</span><br />
+        <span data-gym="address">Address</span><br />
+        Phone: <a data-gym="phone" href="#">—</a><br />
+        Email: <a data-gym="email" href="#">—</a>
+      </p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>&copy; <span id="year">2026</span> <span data-gym="name">Your Gym Name</span>. All rights reserved.</p>
+      <nav aria-label="Legal">
+        <ul class="footer-links">
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="/config.js"></script>
+  <script>
+    (function () {
+      var year = document.getElementById('year');
+      if (year) year.textContent = new Date().getFullYear();
+      var updated = document.getElementById('updated');
+      if (updated) updated.textContent = new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+      function fill(gym) {
+        if (!gym) return;
+        function setAll(sel, value, isLink, prefix) {
+          Array.prototype.forEach.call(document.querySelectorAll(sel), function (n) {
+            if (isLink) {
+              if (!value) return;
+              n.href = prefix + value;
+              if (!n.textContent || n.textContent === '—') n.textContent = value;
+            } else if (value) {
+              n.textContent = value;
+            }
+          });
+        }
+        setAll('[data-gym="name"]', gym.gym_name);
+        setAll('[data-gym="address"]', gym.contact_address);
+        setAll('[data-gym="email"]', gym.contact_email, true, 'mailto:');
+        setAll('[data-gym="phone"]', gym.contact_phone, true, 'tel:');
+        if (gym.gym_name) document.title = 'Terms of Membership | ' + gym.gym_name;
+      }
+
+      var API = window.GYM_CONFIG && window.GYM_CONFIG.API_URL;
+      if (!API || API.indexOf('PASTE_') === 0) { fill(window.GYM_CONFIG && window.GYM_CONFIG.FALLBACK); return; }
+      fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'public_config', payload: {} })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        fill(data && data.ok ? data.data.gym : null);
+      }).catch(function () { fill(window.GYM_CONFIG && window.GYM_CONFIG.FALLBACK); });
+    })();
+  </script>
+</body>
+</html>

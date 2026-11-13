@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page not found | Gym</title>
+  <meta name="description" content="That page could not be found. Head back to the gym home page." />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="Home">
+        <img class="brand-logo" src="/og-image.png" alt="" width="36" height="36" />
+        <span data-gym="name">Your Gym Name</span>
+      </a>
+    </div>
+  </header>
+  <main class="center-page">
+    <div>
+      <p class="big-code">404</p>
+      <h1>We couldn&rsquo;t find that page</h1>
+      <p class="muted">The link may be old, or the page may have moved.</p>
+      <p><a class="btn btn-primary" href="/">Back to the home page</a></p>
+      <p class="small"><a href="/#plans">See plans</a> · <a href="/#contact">Contact us</a></p>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>&copy; <span id="year">2026</span> <span data-gym="name">Your Gym Name</span></p>
+      <nav aria-label="Legal">
+        <ul class="footer-links">
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+  <script src="/config.js"></script>
+  <script>
+    (function () {
+      var year = document.getElementById('year');
+      if (year) year.textContent = new Date().getFullYear();
+      var API = window.GYM_CONFIG && window.GYM_CONFIG.API_URL;
+      if (!API || API.indexOf('PASTE_') === 0) return;
+      fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'public_config', payload: {} })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (!data || !data.ok) return;
+        var name = (data.data.gym && data.data.gym.gym_name) || '';
+        if (!name) return;
+        Array.prototype.forEach.call(document.querySelectorAll('[data-gym="name"]'), function (n) {
+          n.textContent = name;
+        });
+        document.title = 'Page not found | ' + name;
+      }).catch(function () {});
+    })();
+  </script>
+</body>
+</html>

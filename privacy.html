@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy Policy | Gym</title>
+  <meta name="description" content="How the gym collects, uses and stores member information." />
+  <meta property="og:title" content="Privacy Policy" />
+  <meta property="og:description" content="How we collect, use and store your information." />
+  <meta property="og:image" content="/og-image.png" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="Home">
+        <img class="brand-logo" src="/og-image.png" alt="" width="36" height="36" />
+        <span data-gym="name">Your Gym Name</span>
+      </a>
+      <a class="btn btn-ghost btn-sm" href="/">Home</a>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="wrap page-body">
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: <span id="updated">—</span></p>
+
+      <p class="notice">
+        <strong>Draft for review.</strong> This page is a starting point, not legal advice. The gym owner should
+        have it checked against local privacy law (for example GDPR, UK GDPR, CCPA or PIPEDA) before launch.
+      </p>
+
+      <p>
+        <span data-gym="name">Your Gym Name</span> (&ldquo;we&rdquo;, &ldquo;us&rdquo;) runs the membership system used at our
+        front desk and on this website. This page explains what we collect, why, and what you can ask us to do with it.
+      </p>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Contact details:</strong> your name, phone number, email address and postal address.</li>
+        <li><strong>Emergency contact:</strong> a name and phone number you give us, so we can reach someone if needed.</li>
+        <li><strong>Membership records:</strong> the plan you are on, start and end dates, freezes and renewals.</li>
+        <li><strong>Payments:</strong> amounts, dates, method and any reference number. We do not store card numbers.</li>
+        <li><strong>Attendance:</strong> the date and time you check in, and whether the check-in was allowed or refused.</li>
+        <li><strong>Notes:</strong> short staff notes about your membership (for example a freeze request you made).</li>
+      </ul>
+      <p>We do not collect health data, biometric data or payment card details through this website.</p>
+
+      <h2>Why we use it</h2>
+      <ul>
+        <li>To run your membership, take payments and issue receipts.</li>
+        <li>To check you in and confirm your membership is current.</li>
+        <li>To contact you about renewals, unpaid balances or changes to your membership.</li>
+        <li>To keep the records a business is normally required to keep.</li>
+      </ul>
+      <p>We do not sell your information, and we do not use it for third-party advertising.</p>
+
+      <h2>Where it is stored</h2>
+      <p>
+        Member records are kept in a private Google spreadsheet that only the gym owner can open, accessed through a
+        password-protected staff dashboard. The website itself is hosted on Vercel and contains no member data.
+        Google and Vercel process data on our behalf under their own terms.
+      </p>
+
+      <h2>How long we keep it</h2>
+      <p>
+        We keep membership and payment records while your membership is active and afterwards for as long as we need
+        them for accounting and legal reasons. When you ask us to delete your details, we remove the personal fields
+        and keep only the minimum financial record we are required to keep.
+      </p>
+
+      <h2>Who can see it</h2>
+      <p>
+        Gym staff can see the details they need to check you in and take payments. Only the owner can change settings,
+        export data or delete records. Every change is logged.
+      </p>
+
+      <h2>Cookies and local storage</h2>
+      <p>
+        This website does not use advertising or tracking cookies. The staff dashboard stores a login token in your
+        browser so you stay signed in, and the site remembers whether you prefer light or dark mode. Signing out clears
+        the token.
+      </p>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li>Ask what we hold about you, and get a copy.</li>
+        <li>Ask us to correct anything wrong.</li>
+        <li>Ask us to delete your details, where we are not required to keep them.</li>
+        <li>Ask us to stop sending renewal messages.</li>
+      </ul>
+      <p>
+        To do any of these, contact us at <a data-gym="email" href="#">the email on our contact details</a>
+        or call <a data-gym="phone" href="#">the gym phone number</a>. We aim to reply within 30 days.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        <span data-gym="name">Your Gym Name</span><br />
+        <span data-gym="address">Address</span><br />
+        Phone: <a data-gym="phone" href="#">—</a><br />
+        Email: <a data-gym="email" href="#">—</a>
+      </p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>&copy; <span id="year">2026</span> <span data-gym="name">Your Gym Name</span>. All rights reserved.</p>
+      <nav aria-label="Legal">
+        <ul class="footer-links">
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="/config.js"></script>
+  <script>
+    (function () {
+      var year = document.getElementById('year');
+      if (year) year.textContent = new Date().getFullYear();
+      var updated = document.getElementById('updated');
+      if (updated) updated.textContent = new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+      function fill(gym) {
+        if (!gym) return;
+        function setAll(sel, value, isLink, prefix) {
+          Array.prototype.forEach.call(document.querySelectorAll(sel), function (n) {
+            if (isLink) {
+              if (!value) return;
+              n.href = prefix + value;
+              if (!n.textContent || n.textContent === '—') n.textContent = value;
+            } else if (value) {
+              n.textContent = value;
+            }
+          });
+        }
+        setAll('[data-gym="name"]', gym.gym_name);
+        setAll('[data-gym="address"]', gym.contact_address);
+        setAll('[data-gym="email"]', gym.contact_email, true, 'mailto:');
+        setAll('[data-gym="phone"]', gym.contact_phone, true, 'tel:');
+        if (gym.gym_name) document.title = 'Privacy Policy | ' + gym.gym_name;
+      }
+
+      var API = window.GYM_CONFIG && window.GYM_CONFIG.API_URL;
+      if (!API || API.indexOf('PASTE_') === 0) { fill(window.GYM_CONFIG && window.GYM_CONFIG.FALLBACK); return; }
+      fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'public_config', payload: {} })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        fill(data && data.ok ? data.data.gym : null);
+      }).catch(function () { fill(window.GYM_CONFIG && window.GYM_CONFIG.FALLBACK); });
+    })();
+  </script>
+</body>
+</html>

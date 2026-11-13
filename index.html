@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Memberships &amp; Plans | Gym</title>
+  <meta name="description" content="See membership plans, opening hours and join the gym. Ask a question or reserve your spot online." />
+  <meta name="theme-color" content="#0f172a" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Memberships &amp; Plans | Gym" />
+  <meta property="og:description" content="Flexible day, monthly and annual memberships. Join online in a minute." />
+  <meta property="og:image" content="/og-image.png" />
+  <meta property="og:url" content="/" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="Home">
+        <img id="brand-logo" class="brand-logo" src="/og-image.png" alt="" width="36" height="36" />
+        <span id="brand-name">Your Gym Name</span>
+      </a>
+      <nav aria-label="Main">
+        <ul class="nav-list">
+          <li><a href="#plans">Plans</a></li>
+          <li><a href="#join">Join</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+      <a class="btn btn-primary btn-sm" href="#join">Join now</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow" id="hero-hours">Opening hours loading…</p>
+          <h1>Train on your schedule.<br />We&rsquo;ll handle the rest.</h1>
+          <p class="lede">
+            Pick a plan, join in a minute, and check in with a tap. Your membership,
+            payments and visits stay in one place.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#join">Join now</a>
+            <a class="btn btn-ghost" href="#plans">See plans</a>
+          </div>
+          <p class="hero-note" id="hero-contact">Contact details load from your gym settings.</p>
+        </div>
+        <div class="hero-card" aria-hidden="true">
+          <div class="hero-card-row"><span>Day pass</span><span class="dot"></span></div>
+          <div class="hero-card-row"><span>Monthly</span><span class="dot"></span></div>
+          <div class="hero-card-row"><span>Annual</span><span class="dot"></span></div>
+          <p class="hero-card-foot">Plans below</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="plans" aria-labelledby="plans-title">
+      <div class="wrap">
+        <h2 id="plans-title">Membership plans</h2>
+        <p class="section-lede">Every plan includes full access during opening hours.</p>
+        <div id="plans-grid" class="plans-grid" aria-live="polite">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+        <p id="plans-error" class="form-error" hidden>
+          We can&rsquo;t load plans right now. <button type="button" class="link-btn" id="retry-plans">Retry</button>
+        </p>
+      </div>
+    </section>
+
+    <section class="section section-alt" aria-labelledby="why-title">
+      <div class="wrap">
+        <h2 id="why-title">Why members stay</h2>
+        <div class="features">
+          <div class="feature">
+            <h3>Plans for every schedule</h3>
+            <p>Drop in for a day or commit for a year. Change plans whenever your routine does.</p>
+          </div>
+          <div class="feature">
+            <h3>Fast check-in</h3>
+            <p>Give your member ID at the desk and you&rsquo;re in. No paperwork, no waiting.</p>
+          </div>
+          <div class="feature">
+            <h3>Clear billing</h3>
+            <p>See what you paid, what&rsquo;s left, and when your membership ends. Receipts on request.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="join" aria-labelledby="join-title">
+      <div class="wrap join-wrap">
+        <div>
+          <h2 id="join-title">Join or ask a question</h2>
+          <p class="section-lede">
+            Send your details and the team will call or message you back to set up your plan and first visit.
+          </p>
+          <p class="small">Prefer to talk? <a id="join-phone" href="#contact">Use the contact details below.</a></p>
+        </div>
+
+        <form id="join-form" class="card form" novalidate>
+          <div class="field">
+            <label for="full_name">Full name <span aria-hidden="true">*</span></label>
+            <input id="full_name" name="full_name" type="text" autocomplete="name" required maxlength="80" />
+            <p class="field-error" data-error-for="full_name" hidden></p>
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="32" />
+            <p class="field-error" data-error-for="phone" hidden></p>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="120" />
+            <p class="field-error" data-error-for="email" hidden></p>
+          </div>
+          <div class="field">
+            <label for="message">Message <span class="muted">(optional)</span></label>
+            <textarea id="message" name="message" rows="3" maxlength="500"></textarea>
+            <p class="field-error" data-error-for="message" hidden></p>
+          </div>
+          <p class="small muted">
+            By sending this you agree to our <a href="/privacy">Privacy Policy</a> and <a href="/terms">Terms</a>.
+          </p>
+          <button id="join-submit" class="btn btn-primary btn-block" type="submit">Send my details</button>
+          <p id="join-status" class="form-error" role="alert" hidden></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="contact" aria-labelledby="contact-title">
+      <div class="wrap">
+        <h2 id="contact-title">Find us</h2>
+        <div class="contact-grid">
+          <div>
+            <h3>Address</h3>
+            <p id="c-address">Loading…</p>
+          </div>
+          <div>
+            <h3>Phone</h3>
+            <p><a id="c-phone" href="#">Loading…</a></p>
+          </div>
+          <div>
+            <h3>Email</h3>
+            <p><a id="c-email" href="#">Loading…</a></p>
+          </div>
+          <div>
+            <h3>Opening hours</h3>
+            <p id="c-hours">Loading…</p>
+          </div>
+        </div>
+        <p class="small" id="c-social"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>&copy; <span id="year">2026</span> <span id="footer-name">Your Gym Name</span>. All rights reserved.</p>
+      <nav aria-label="Legal">
+        <ul class="footer-links">
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms</a></li>
+          <li><a href="/admin">Staff login</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+
+  <div class="sticky-cta">
+    <a class="btn btn-primary btn-block" href="#join">Join now</a>
+  </div>
+
+  <script src="/config.js"></script>
+  <script src="/public.js"></script>
+</body>
+</html>

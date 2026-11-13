@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thanks, we have your details | Gym</title>
+  <meta name="description" content="Your details were sent to the gym. The team will be in touch shortly." />
+  <meta name="robots" content="noindex" />
+  <meta property="og:title" content="Thanks, we have your details" />
+  <meta property="og:image" content="/og-image.png" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/" aria-label="Home">
+        <img class="brand-logo" src="/og-image.png" alt="" width="36" height="36" />
+        <span data-gym="name">Your Gym Name</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="center-page">
+    <div>
+      <div class="tick" aria-hidden="true">✓</div>
+      <h1>Thanks, we have your details</h1>
+      <p class="muted">
+        <span data-gym="name">Your Gym Name</span> will call or message you shortly to set up your plan and your first visit.
+      </p>
+      <p>
+        <a class="btn btn-primary" href="/">Back to the home page</a>
+      </p>
+      <p class="small">
+        Need to talk now? Call <a data-gym="phone" href="#">the gym</a> or email
+        <a data-gym="email" href="#">us</a>.
+      </p>
+      <p class="small muted" id="hours"></p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>&copy; <span id="year">2026</span> <span data-gym="name">Your Gym Name</span></p>
+      <nav aria-label="Legal">
+        <ul class="footer-links">
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/terms">Terms</a></li>
+        </ul>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="/config.js"></script>
+  <script>
+    (function () {
+      var year = document.getElementById('year');
+      if (year) year.textContent = new Date().getFullYear();
+
+      function fill(gym) {
+        if (!gym) return;
+        function setAll(sel, value, isLink, prefix) {
+          Array.prototype.forEach.call(document.querySelectorAll(sel), function (n) {
+            if (isLink) {
+              if (!value) return;
+              n.href = prefix + value;
+              if (!n.textContent || n.textContent === '—') n.textContent = value;
+            } else if (value) {
+              n.textContent = value;
+            }
+          });
+        }
+        setAll('[data-gym="name"]', gym.gym_name);
+        setAll('[data-gym="email"]', gym.contact_email, true, 'mailto:');
+        setAll('[data-gym="phone"]', gym.contact_phone, true, 'tel:');
+        var hours = document.getElementById('hours');
+        if (hours && gym.opening_hours) hours.textContent = 'Open ' + gym.opening_hours;
+        if (gym.gym_name) document.title = 'Thanks, we have your details | ' + gym.gym_name;
+      }
+
+      var API = window.GYM_CONFIG && window.GYM_CONFIG.API_URL;
+      if (!API || API.indexOf('PASTE_') === 0) { fill(window.GYM_CONFIG && window.GYM_CONFIG.FALLBACK); return; }
+      fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'public_config', payload: {} })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        fill(data && data.ok ? data.data.gym : null);
+      }).catch(function () { fill(window.GYM_CONFIG && window.GYM_CONFIG.FALLBACK); });
+    })();
+  </script>
+</body>
+</html>

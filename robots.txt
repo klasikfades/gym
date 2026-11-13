@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /thank-you
+
+Sitemap: https://gym-tracker.example.com/sitemap.xml
